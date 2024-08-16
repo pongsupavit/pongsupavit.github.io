@@ -1,10 +1,17 @@
 // Handle card flip with device orientation
 window.addEventListener('deviceorientation', (event) => {
-    let alpha = event.alpha;
-    let beta = event.beta;
-    let gamma = event.gamma;
-    // Adjust the card's rotation based on device orientation
-    document.getElementById('card').style.transform = `rotateY(${gamma}deg) rotateX(${beta}deg)`;
+    const alpha = event.alpha || 0;
+    const beta = event.beta || 0;
+    const gamma = event.gamma || 0;
+    
+    // Apply 3D rotation based on device orientation
+    const card = document.getElementById('card');
+    card.style.transform = `rotateY(${gamma}deg) rotateX(${beta}deg)`;
+    
+    // Update shadow based on rotation for a more dynamic effect
+    const shadowX = Math.sin(gamma * Math.PI / 180) * 20;
+    const shadowY = Math.sin(beta * Math.PI / 180) * 20;
+    card.style.boxShadow = `0 ${shadowY}px ${shadowX}px rgba(255, 255, 255, 0.5)`;
 });
 
 // Save contact button functionality
