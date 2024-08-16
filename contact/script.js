@@ -1,3 +1,21 @@
+// Handle card movement with mouse
+document.addEventListener('mousemove', (event) => {
+    const card = document.getElementById('card');
+    const { clientX: x, clientY: y } = event;
+    const { innerWidth: width, innerHeight: height } = window;
+    
+    // Calculate rotation based on mouse position
+    const xRotation = ((y / height) - 0.5) * 20;
+    const yRotation = ((x / width) - 0.5) * -20;
+
+    card.style.transform = `rotateX(${xRotation}deg) rotateY(${yRotation}deg)`;
+
+    // Create a floating effect with shadow
+    const shadowX = (y / height - 0.5) * 20;
+    const shadowY = (x / width - 0.5) * 20;
+    card.style.boxShadow = `${shadowX}px ${shadowY}px 30px rgba(0, 0, 0, 0.2)`;
+});
+
 // Handle card flip with device orientation
 window.addEventListener('deviceorientation', (event) => {
     const alpha = event.alpha || 0;
@@ -11,7 +29,7 @@ window.addEventListener('deviceorientation', (event) => {
     // Update shadow based on rotation for a more dynamic effect
     const shadowX = Math.sin(gamma * Math.PI / 180) * 20;
     const shadowY = Math.sin(beta * Math.PI / 180) * 20;
-    card.style.boxShadow = `0 ${shadowY}px ${shadowX}px rgba(255, 255, 255, 0.5)`;
+    card.style.boxShadow = `0 ${shadowY}px ${shadowX}px rgba(0, 0, 0, 0.3)`;
 });
 
 // Save contact button functionality
