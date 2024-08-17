@@ -1,29 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Contact Card</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Contact Card</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #f5f5f5;
+        }
+
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 85.6mm;
+            height: 53.98mm;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateY(0deg);
+            transition: transform 0.8s;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+
+        .card.flip {
+            transform: rotateY(180deg);
+        }
+
+        .card-front,
+        .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-front {
+            background-color: white;
+            color: #000;
+            padding: 10px;
+        }
+
+        .card-back {
+            background-color: #ffffff; /* Default background color, will be overridden by the fetched data */
+            transform: rotateY(180deg);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-logo {
+            width: 50px;
+            height: 50px;
+        }
+
+        .card-logo-front {
+            width: 40px;
+            height: 40px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .add-to-contact-btn {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .add-to-contact-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .card-details {
+            text-align: left;
+            width: 100%;
+            font-size: 0.75em;
+            margin-top: 20px;
+        }
+
+        .card-details div {
+            margin-bottom: 5px;
+        }
+
+        .card-details strong {
+            font-size: 1em;
+        }
+
+        .card-details #website {
+            display: none; /* Hide the "Website" label */
+        }
+    </style>
 </head>
+
 <body>
-    <div id="container">
-        <div id="card-holder">
-            <div id="card">
-                <div id="front">
-                    <img src="logo.png" alt="Logo" class="logo">
-                    <h2>Supavit (Pingpong)</h2>
-                    <p>Customer Success Manger Team Leader</p>
-                    <p>Email: supavit.k@appsflyer.com</p>
-                    <p>LinkedIn: <a href="https://linkedin.com/in/supavit" target="_blank">Supavit K.</a></p>
-                </div>
-                <div id="back">
-                    <p>More details about John Doe...</p>
+    <div class="card-container">
+        <div id="contact-card" class="card" onclick="flipCard()">
+            <div class="card-front">
+                <img id="logo-front" class="card-logo-front" src="" alt="Company Logo">
+                <div class="card-details">
+                    <div id="name-role"></div>
+                    <div id="email"></div>
+                    <div id="phone"></div>
+                    <div id="website"></div>
                 </div>
             </div>
+            <div class="card-back">
+                <img id="back-logo" class="card-logo" src="" alt="Company Logo">
+            </div>
         </div>
-        <button id="save-button">Save Contact</button>
+        <button class="add-to-contact-btn" onclick="downloadVCF(event)">Add to Contact</button>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const pathValue = new URLSearchParams(window.location.search).get('path');
+            if (!pathValue) {
+                console.error('Path parameter is missing');
+                return;
+            }
+
+            const apiUrl = `https://script.google.com/macros/s/AKfycbxS3cFxvozdAT0N8zocNRI1rnCs-X5Z-pKgraW9ptoTPBFm1Rf-bviMkYex8iQzuKxkgg/exec?path=${pathValue}`;
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => updateCardDetails(data))
+                .catch(error => console.error('Error fetching data:', error));
+        });
+
+        function updateCardDetails(data) {
+            document.getElementById('name-role').innerHTML = `<strong>${data.Name || 'Name'}</strong><br>${data.Role || 'Role'}`;
+            document.getElementById('email').textContent = `Email: ${data['Work Email'] || 'Email'}`;
+            document.getElementById('phone').textContent = `Phone: ${data['Phone Number'] || 'Phone'}`;
+            document.getElementById('website').textContent = `${data['Company Website'] || ''}`; // Hidden by default
+
+            document.getElementById('logo-front').src = data['Company Logo URL'] || '';
+            document.getElementById('back-logo').src = data['Company Logo URL'] || '';
+
+            // Set background color for the card back
+            const cardBack = document.querySelector('.card-back');
+            cardBack.style.backgroundColor = data['Background Color Code'] || '#ffffff';
+        }
+
+        function flipCard() {
+            document.getElementById('contact-card').classList.toggle('flip');
+        }
+
+        function downloadVCF(event) {
+            event.stopPropagation();
+
+            const name = document.getElementById('name-role').innerText.split('\n')[0].trim();
+            const email = document.getElementById('email').innerText.replace('Email: ', '').trim();
+            const phone = document.getElementById('phone').innerText.replace('Phone: ', '').trim();
+            const website = document.getElementById('website').innerText.trim();
+
+            const vcfData = `
+BEGIN:VCARD
+VERSION:3.0
+FN:${name}
+EMAIL:${email}
+TEL:${phone}
+URL:${website}
+END:VCARD
+            `.trim();
+
+            const blob = new Blob([vcfData], { type: 'text/vcard' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name}.vcf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
 </body>
+
 </html>
