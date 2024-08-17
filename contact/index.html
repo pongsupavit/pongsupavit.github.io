@@ -165,14 +165,16 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+     document.addEventListener('DOMContentLoaded', function () {
     // Extract the path from the URL pathname or query parameter
     const pathname = window.location.pathname.slice(1); // Remove leading '/'
     const queryPath = new URLSearchParams(window.location.search).get('path');
     const pathValue = pathname || queryPath;
 
-    if (!pathValue) {
-        console.error('Path parameter is missing');
+    // Handle the case where the path is empty or the root path is used
+    if (!pathValue || pathValue === '/') {
+        console.error('Path parameter is missing or root path is accessed');
+        // You can set a default path here or show a user-friendly message
         return;
     }
 
@@ -260,6 +262,7 @@ END:VCARD`;
     a.click();
     document.body.removeChild(a);
 }
+
 
     </script>
 </body>
