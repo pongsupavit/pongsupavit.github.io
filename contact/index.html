@@ -68,36 +68,36 @@
             justify-content: center;
             align-items: center;
         }
-        .name-wrapper, .role-wrapper, .details-wrapper {
-            margin-bottom: 10px; /* Default vertical spacing */
+        .name-wrapper, .nickname-wrapper, .role-wrapper, .details-wrapper {
+            margin-bottom: 5px; /* Default vertical spacing */
         }
         .name-wrapper {
-        margin-top: 10px; /* Adjust vertical spacing for the name */
+            margin-top: 10px; /* Adjust vertical spacing for the name */
         }
         .name-wrapper strong {
-        display: block;
-
+            display: block;
+        }
+        .nickname-wrapper {
+            font-size: 12px; /* Different font size for Nick Name */
+            margin-top: 0px; /* Adjust spacing for Nick Name */
         }
         .role-wrapper {
             margin-top: -5px; /* Adjusted spacing for role */
-            font-size: 12px
+            font-size: 12px;
         }
         .details-wrapper {
             margin-top: auto; /* Pushes details to the bottom */
             font-size: 10px; /* Font size for details */
         }
-
         .details-wrapper a {
             color: inherit;
             text-decoration: none;
             display: block;
             margin: 5px 0; /* Space between detail links */
         }
-
         .details-wrapper a:hover {
             text-decoration: underline;
         }
-
         .details-wrapper .website {
             font-weight: bold; /* Bold text for website */
         }
@@ -118,7 +118,7 @@
             transform: translate(-50%, -50%);
         }
         .save-contact-button {
-            background-color: var(--text-color, #000000);
+            background-color: var(--button-color, #000000); /* Use black if no color code */
             color: #ffffff;
             border: none;
             border-radius: 10px;
@@ -146,13 +146,14 @@
             <div class="card-front">
                 <div class="name-wrapper">
                     <strong id="name"></strong>
+                    <div class="nickname-wrapper" id="nickname"></div>
                 </div>
                 <div class="role-wrapper" id="role"></div>
                 <div class="details-wrapper">
-                    <a id="email" href="#" target="_blank" rel="noopener noreferrer">Email</a>
-                    <a id="phone" href="#" onclick="return false;">Phone Number</a>
-                    <a id="line-id" href="#" target="_blank" rel="noopener noreferrer">Line: Line ID</a>
-                    <a id="website" class="website" href="#" target="_blank" rel="noopener noreferrer">Website</a>
+                    <a id="email" href="#" target="_blank" rel="noopener noreferrer" style="display: none;">Email</a>
+                    <a id="phone" href="#" onclick="return false;" style="display: none;">Phone Number</a>
+                    <a id="line-id" href="#" target="_blank" rel="noopener noreferrer" style="display: none;">Line: Line ID</a>
+                    <a id="website" class="website" href="#" target="_blank" rel="noopener noreferrer" style="display: none;">Website</a>
                 </div>
                 <img id="logo-front" class="card-logo-front" src="" alt="Company Logo">
             </div>
@@ -165,76 +166,101 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const pathValue = new URLSearchParams(window.location.search).get('path');
-            if (!pathValue) {
-                console.error('Path parameter is missing');
-                return;
-            }
+    // Extract the path from the URL pathname or query parameter
+    const pathname = window.location.pathname.slice(1); // Remove leading '/'
+    const queryPath = new URLSearchParams(window.location.search).get('path');
+    const pathValue = pathname || queryPath;
 
-            const apiUrl = `https://script.google.com/macros/s/AKfycbxS3cFxvozdAT0N8zocNRI1rnCs-X5Z-pKgraW9ptoTPBFm1Rf-bviMkYex8iQzuKxkgg/exec?path=${pathValue}`;
+    if (!pathValue) {
+        console.error('Path parameter is missing');
+        return;
+    }
 
-            fetch(apiUrl)
-                .then(response => response.json())
-                .then(data => updateCardDetails(data))
-                .catch(error => console.error('Error fetching data:', error));
-        });
+    const apiUrl = `https://script.google.com/macros/s/AKfycbxS3cFxvozdAT0N8zocNRI1rnCs-X5Z-pKgraW9ptoTPBFm1Rf-bviMkYex8iQzuKxkgg/exec?path=${pathValue}`;
 
-        function updateCardDetails(data) {
-            document.getElementById('name').textContent = data.Name || 'Name';
-            document.getElementById('role').textContent = data.Role || 'Role';
-            document.getElementById('phone').textContent = formatPhoneNumber(data['Phone Number'] || '0000000000');
-            document.getElementById('phone').href = `tel:${data['Phone Number'] || '0000000000'}`;
-            document.getElementById('email').textContent = data.Email || 'Email';
-            document.getElementById('email').href = `mailto:${data.Email || 'email@example.com'}`;
-            document.getElementById('line-id').textContent = `Line: ${data['Line ID'] || 'Line ID'}`;
-            document.getElementById('line-id').href = `https://line.me/ti/p/~${data['Line ID'] || ''}`;
-            
-            const websiteUrl = data['Company Website'];
-            if (websiteUrl) {
-                const formattedUrl = websiteUrl.replace(/^https?:\/\//, '');
-                const displayUrl = formattedUrl.startsWith('www.') ? formattedUrl : `www.${formattedUrl}`;
-                document.getElementById('website').textContent = displayUrl;
-                document.getElementById('website').href = `https://${formattedUrl}`;
-            } else {
-                document.getElementById('website').textContent = 'www.website.com';
-                document.getElementById('website').href = '#';
-            }
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => updateCardDetails(data))
+        .catch(error => console.error('Error fetching data:', error));
+});
 
-            document.getElementById('logo-front').src = data['Company Logo Front'] || '';
-            document.getElementById('back-logo').src = data['Company Logo Back'] || '';
-            document.documentElement.style.setProperty('--back-color', data['Color Code'] || '#ffffff');
-            document.documentElement.style.setProperty('--text-color', data['Color Code'] || '#000000');
-            document.documentElement.style.setProperty('--button-color', data['Color Code'] || '#0000ff');
-        }
+function updateCardDetails(data) {
+    const name = data.Name || '';
+    const nickname = data['Nick Name'] ? `(${data['Nick Name']})` : '';
+    const role = data.Role || '';
+    const phone = formatPhoneNumber(data['Phone Number'] || '');
+    const email = data.Email || '';
+    const lineId = data['Line ID'] || '';
+    const websiteUrl = data['Company Website'] || '';
+    const logoFront = data['Company Logo Front'] || '';
+    const backLogo = data['Company Logo Back'] || '';
+    const colorCode = data['Color Code'] || '#ffffff';
 
-        function formatPhoneNumber(phoneNumber) {
-            return phoneNumber.replace(/^(\d{2})(\d{4})(\d{4})$/, '(+66)$1-$2-$3');
-        }
+    document.getElementById('name').textContent = name;
+    document.getElementById('nickname').textContent = nickname;
+    document.getElementById('role').textContent = role;
+    document.getElementById('phone').textContent = phone;
+    document.getElementById('phone').href = `tel:${data['Phone Number'] || ''}`;
+    document.getElementById('email').textContent = email;
+    document.getElementById('email').href = `mailto:${email}`;
+    document.getElementById('line-id').textContent = `Line: ${lineId}`;
+    document.getElementById('line-id').href = `https://line.me/ti/p/~${lineId}`;
+    
+    if (websiteUrl) {
+        const formattedUrl = websiteUrl.replace(/^https?:\/\//, '');
+        const displayUrl = formattedUrl.startsWith('www.') ? formattedUrl : `www.${formattedUrl}`;
+        document.getElementById('website').textContent = displayUrl;
+        document.getElementById('website').href = `https://${formattedUrl}`;
+        document.getElementById('website').style.display = 'block';
+    } else {
+        document.getElementById('website').style.display = 'none';
+    }
 
-        function flipCard() {
-            document.getElementById('contact-card').classList.toggle('flip');
-        }
+    document.getElementById('logo-front').src = logoFront;
+    document.getElementById('back-logo').src = backLogo;
+    document.documentElement.style.setProperty('--back-color', colorCode || '#ffffff');
+    document.documentElement.style.setProperty('--text-color', colorCode || '#000000');
+    document.documentElement.style.setProperty('--button-color', colorCode || '#000000'); // Default to black
 
-        function downloadVCF() {
-            const name = document.getElementById('name').textContent;
-            const phone = document.getElementById('phone').textContent.replace('Phone Number: ', '');
-            const email = document.getElementById('email').textContent.replace('Email: ', '');
+    // Show or hide details based on availability
+    document.getElementById('email').style.display = email ? 'block' : 'none';
+    document.getElementById('phone').style.display = phone ? 'block' : 'none';
+    document.getElementById('line-id').style.display = lineId ? 'block' : 'none';
+    document.getElementById('nickname').style.display = nickname ? 'block' : 'none';
+}
 
-            const vcfContent = `BEGIN:VCARD
+function formatPhoneNumber(phoneNumber) {
+    // Add formatting logic if needed
+    return phoneNumber;
+}
+
+function flipCard() {
+    const card = document.getElementById('contact-card');
+    card.classList.toggle('flip');
+}
+
+function downloadVCF() {
+    const name = document.getElementById('name').textContent.trim();
+    const phone = document.getElementById('phone').textContent.trim();
+    const email = document.getElementById('email').textContent.trim();
+
+    const vcfData = `BEGIN:VCARD
 VERSION:3.0
 FN:${name}
 TEL:${phone}
 EMAIL:${email}
 END:VCARD`;
 
-            const blob = new Blob([vcfContent], { type: 'text/vcard' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${name.replace(/\s+/g, '_')}.vcf`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
+    const blob = new Blob([vcfData], { type: 'text/vcard' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name}.vcf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
     </script>
 </body>
 
