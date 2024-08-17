@@ -165,24 +165,24 @@
     </div>
 
     <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const pathname = window.location.pathname.slice(1); // Remove leading '/'
-    const queryPath = new URLSearchParams(window.location.search).get('path');
-    const pathValue = pathname || queryPath;
+        document.addEventListener('DOMContentLoaded', function () {
+            const path = window.location.pathname.slice(1); // Remove leading '/'
+            const queryPath = new URLSearchParams(window.location.search).get('path');
+            const pathValue = path || queryPath;
 
-    if (!pathValue || pathValue === '/' || pathValue === 'contact') {
-        console.error('Path parameter is missing or root path is accessed');
-        // Optionally handle this case or display a message
-        return;
-    }
+            if (!pathValue || pathValue === '/' || pathValue === 'contact') {
+                console.error('Path parameter is missing or root path is accessed');
+                // Optionally handle this case or display a message
+                return;
+            }
 
-    const apiUrl = `https://script.google.com/macros/s/AKfycbxS3cFxvozdAT0N8zocNRI1rnCs-X5Z-pKgraW9ptoTPBFm1Rf-bviMkYex8iQzuKxkgg/exec?path=${pathValue}`;
+            const apiUrl = `https://script.google.com/macros/s/AKfycbxS3cFxvozdAT0N8zocNRI1rnCs-X5Z-pKgraW9ptoTPBFm1Rf-bviMkYex8iQzuKxkgg/exec?path=${pathValue}`;
 
-    fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => updateCardDetails(data))
-        .catch(error => console.error('Error fetching data:', error));
-});
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => updateCardDetails(data))
+                .catch(error => console.error('Error fetching data:', error));
+        });
 
 function updateCardDetails(data) {
     const name = data.Name || '';
