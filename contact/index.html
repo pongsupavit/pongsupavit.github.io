@@ -165,14 +165,12 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-    // Extract the path from the URL pathname or query parameter
+document.addEventListener('DOMContentLoaded', function () {
     const pathname = window.location.pathname.slice(1); // Remove leading '/'
     const queryPath = new URLSearchParams(window.location.search).get('path');
     const pathValue = pathname || queryPath;
 
-    // Handle the case where the path is empty or the root path is used
-    if (!pathValue || pathValue === '/') {
+    if (!pathValue || pathValue === '/' || pathValue === 'contact') {
         console.error('Path parameter is missing or root path is accessed');
         // Optionally handle this case or display a message
         return;
@@ -262,6 +260,7 @@ END:VCARD`;
     a.click();
     document.body.removeChild(a);
 }
+
 
     </script>
 </body>
