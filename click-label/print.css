@@ -1,0 +1,85 @@
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+
+  /* Hide everything except the page */
+  body * {
+    visibility: hidden;
+  }
+
+  .page,
+  .page * {
+    visibility: visible;
+  }
+
+  /* Reset body */
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    width: 21cm;
+    height: 29.7cm;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  /* Page container */
+  .page {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 21cm !important;
+    height: 29.7cm !important;
+    margin: 0 !important;
+    padding-top: 1cm !important;
+    padding-left: 1.1cm !important;
+    padding-right: 1.1cm !important;
+    padding-bottom: 0 !important;
+
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    transform: none !important;
+    overflow: hidden !important;
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    /* 8 cols of 2cm */
+    grid-template-columns: repeat(8, 2cm) !important;
+    /* 31 rows of 0.9cm */
+    grid-template-rows: repeat(31, 0.9cm) !important;
+    /* 0.4cm column gap */
+    gap: 0 0.4cm !important;
+
+    width: auto !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Labels */
+  .label {
+    width: 2cm !important;
+    height: 0.9cm !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Hide non-printable elements broadly */
+  header,
+  footer,
+  .controls,
+  #pageHeader,
+  .header-mode-wrapper,
+  .card,
+  .page.shadow {
+    display: none !important;
+  }
+}

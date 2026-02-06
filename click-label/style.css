@@ -1,0 +1,380 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f6f8;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Thai', sans-serif;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Visual polish */
+.card {
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.06);
+  box-shadow: none;
+}
+
+.h4 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #111827;
+}
+
+.btn-primary {
+  background: #0f172a;
+  border: none;
+}
+
+.btn-outline-secondary {
+  border-radius: 8px;
+}
+
+#pageHeader {
+  padding-bottom: 6px;
+}
+
+/* Header improvements */
+.header-left h1 {
+  line-height: 1.05;
+  font-size: 1.05rem;
+}
+
+.header-actions .btn {
+  min-width: 44px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  color: white;
+  transition: all 0.2s;
+}
+
+.header-actions .btn .bi {
+  font-size: 1rem;
+  vertical-align: middle;
+}
+
+/* Icon-only button in header */
+.header-actions .btn.btn-icon {
+  width: 40px;
+  height: 36px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* Modern Button Colors */
+#printBtn {
+  background-color: #0ea5e9;
+  border-color: #0ea5e9;
+}
+
+#printBtn:hover {
+  background-color: #0284c7;
+  border-color: #0284c7;
+}
+
+#downloadPdfBtn {
+  background-color: #0ea5e9;
+  border-color: #0ea5e9;
+}
+
+#downloadPdfBtn:hover {
+  background-color: #0284c7;
+  border-color: #0284c7;
+}
+
+.style-roboto {
+  font-family: 'Roboto', sans-serif !important;
+}
+
+/* Font Families */
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+.font-roboto {
+  font-family: 'Roboto', sans-serif;
+}
+
+.font-sf {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.font-arial {
+  font-family: Arial, sans-serif;
+}
+
+.font-helvetica {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Font Weights */
+.fw-regular {
+  font-weight: 400 !important;
+}
+
+.fw-semibold {
+  font-weight: 500 !important;
+  /* Changed to Medium (500) for distinct visual */
+}
+
+/* Standard semibold */
+.fw-bold {
+  font-weight: 700 !important;
+}
+
+/* App Containers */
+.app-container {
+  max-width: 1400px;
+  /* Reduced for better alignment */
+  margin: 0 auto;
+}
+
+#pageHeader .container {
+  max-width: 1400px;
+  /* Match app-container */
+}
+
+.preview-container-bg {
+  background-color: transparent;
+  /* Removed background */
+  border: none;
+  /* Unified scrolling: remove constrained height/overflow */
+  align-items: flex-start;
+}
+
+/* Page Styling (A4) */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  padding-top: 1cm;
+  padding-left: 1.1cm;
+  padding-right: 1.1cm;
+  padding-bottom: 0;
+  margin: 0 auto;
+  /* Align with sidebar - no top margin */
+  background: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  /* Shadow restored */
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  /* Center content (grid) horizontally */
+}
+
+/* Grid alignment on screen */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(8, 2cm);
+  grid-template-rows: repeat(31, 0.9cm);
+  gap: 0 0.4cm;
+  justify-content: center;
+}
+
+/* Single Sticker Preview (Real Size 2cm x 0.9cm) */
+.single-preview-container {
+  background: white;
+  width: 2cm;
+  height: 0.9cm;
+  border-radius: 2mm;
+  /* 2mm radius as requested */
+  border: 1px solid #ddd;
+  /* Subtle border for visibility */
+  overflow: hidden;
+  margin: 0 auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  /* Centering helper */
+  justify-content: center;
+  align-items: center;
+}
+
+/* Reuse .label styles but ensure no external margins affect it */
+.single-preview-container .label {
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+
+
+
+/* Label Base */
+.label {
+  width: 2cm;
+  height: 0.9cm;
+  border: 1px dashed rgba(0, 0, 0, 0.35);
+  /* Darker dashed border for preview */
+  border-radius: 2mm;
+  /* Rounded corners */
+  box-sizing: border-box;
+  background: transparent;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+
+  /* Typography rules for line counts */
+  /* 1 or 2 lines: 7pt, line-height 1.1 */
+  font-size: 7pt;
+  line-height: 1.1;
+  padding: 0.8mm;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Hide dashed border when printing */
+@media print {
+  .label {
+    border: none !important;
+  }
+}
+
+/* Specific sizing for 3 lines */
+.label.lines-3 {
+  font-size: 5.5pt;
+  line-height: 1.1;
+}
+
+/* Ensure 1/2 lines stay at 7pt overrides if needed */
+.label.lines-1,
+.label.lines-2 {
+  font-size: 7pt;
+  line-height: 1.1;
+}
+
+.label-text {
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+  width: 100%;
+  line-height: 1;
+}
+
+/* When printing (or during beforeprint) we add a class to body to force labels to be transparent
+   This ensures the on-screen print-preview matches the printed/PDF output. */
+.no-label-bg-for-print .label {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-print-color-adjust: auto !important;
+  print-color-adjust: auto !important;
+}
+
+/* Minimal UI polish */
+.card {
+  border: 1px solid #e6e9ee;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.h4 {
+  font-weight: 600;
+}
+
+.form-control:focus {
+  box-shadow: none;
+  border-color: #cbd5e1;
+}
+
+#customPreview {
+  width: 100%;
+  white-space: pre-wrap;
+  text-align: center;
+  min-height: 2.2em;
+  color: #444;
+}
+
+.label {
+  justify-content: center;
+  text-align: center;
+}
+
+/* small responsive tweak to keep preview neat */
+@media (max-width: 576px) {
+  .card-body .row {
+    align-items: start;
+  }
+
+  /* keep preview responsive via JS scaling */
+}
+
+/* UX: show trimmed state */
+.custom-truncated {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* make footer link subtle */
+/* make footer link subtle */
+footer {
+  margin-top: 0 !important;
+  margin-bottom: 1.5rem !important;
+}
+
+footer a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(0, 0, 0, 0.08);
+}
+
+footer a:hover {
+  color: #0f172a;
+}
+
+/* Mobile Footer Spacing */
+@media (max-width: 768px) {
+  .preview-wrapper {
+    padding-bottom: 0;
+  }
+
+  /* footer {} was empty */
+}
+
+/* Inner Alignment Grid for Structured Labels */
+.label-grid-wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  /* CRITICAL: Align keys to the left within the block */
+}
+
+.label-row {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
+  /* Align key and value to the left of the row */
+  align-items: baseline;
+}
+
+.label-key {
+  font-weight: inherit;
+  text-align: left;
+  width: 2.8em;
+  /* Fixed width to ensure values align vertically */
+  flex-shrink: 0;
+}
+
+.label-val {
+  font-weight: inherit;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
