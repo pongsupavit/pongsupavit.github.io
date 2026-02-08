@@ -2,10 +2,23 @@
 import { getCollection } from "astro:content";
 
 const entries = await getCollection("gitbook");
+const getTitle = (entry) => {
+  if (entry.data?.title) {
+    return entry.data.title;
+  }
+
+  const match = entry.body?.match(/^#\s+(.+)$/m);
+  if (match) {
+    return match[1].trim();
+  }
+
+  return entry.id;
+};
+
 const items = entries
   .map((entry) => ({
     id: entry.id.replace(/\.md$/, ""),
-    title: entry.data.title ?? entry.id,
+    title: getTitle(entry),
   }))
   .sort((a, b) => a.title.localeCompare(b.title));
 ---

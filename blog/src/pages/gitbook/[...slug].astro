@@ -12,17 +12,19 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await entry.render();
+const headingMatch = entry.body?.match(/^#\s+(.+)$/m);
+const pageTitle = entry.data?.title ?? headingMatch?.[1]?.trim() ?? entry.id;
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>{entry.data.title}</title>
+    <title>{pageTitle}</title>
   </head>
   <body>
     <p><a href="/gitbook/">Back to GitBook</a></p>
-    <h1>{entry.data.title}</h1>
+    <h1>{pageTitle}</h1>
     <Content />
   </body>
 </html>
