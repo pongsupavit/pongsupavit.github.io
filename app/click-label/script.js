@@ -49,8 +49,12 @@
     nodes.lotNumber = $('lotNumber');
 
     nodes.customTextLabel = $('customTextLabel');
-    nodes.customText = $('customText');
-    nodes.customCounter = $('customCounter');
+    nodes.customLine1 = $('customLine1');
+    nodes.customLine2 = $('customLine2');
+    nodes.customLine3 = $('customLine3');
+    nodes.counter1 = $('counter1');
+    nodes.counter2 = $('counter2');
+    nodes.counter3 = $('counter3');
 
     // New Controls
     nodes.fontSelect = $('fontSelect');
@@ -72,9 +76,18 @@
     nodes.mfd?.addEventListener('change', generate);
     nodes.expYears?.addEventListener('change', generate);
     nodes.lotNumber?.addEventListener('input', generate);
-    // Listen to Custom Text input for validation
-    nodes.customText?.addEventListener('input', () => {
-      validateCustomText();
+    
+    // Listen to Custom Line inputs
+    nodes.customLine1?.addEventListener('input', () => {
+      updateCounter();
+      generate();
+    });
+    nodes.customLine2?.addEventListener('input', () => {
+      updateCounter();
+      generate();
+    });
+    nodes.customLine3?.addEventListener('input', () => {
+      updateCounter();
       generate();
     });
 
@@ -108,13 +121,10 @@
       validateLotNumber();
       debouncedGenerate();
     });
-    nodes.customText?.addEventListener('input', () => {
-      validateCustomText();
-      debouncedGenerate();
-    });
 
     // Initial state
     updateMode();
+    updateCounter();
     generate();
 
     // responsive preview
@@ -123,36 +133,15 @@
   }
 
 
+  function updateCounter() {
+    if (nodes.counter1) nodes.counter1.textContent = (nodes.customLine1?.value || '').length;
+    if (nodes.counter2) nodes.counter2.textContent = (nodes.customLine2?.value || '').length;
+    if (nodes.counter3) nodes.counter3.textContent = (nodes.customLine3?.value || '').length;
+  }
+
   function validateCustomText() {
-    if (!nodes.customText) return;
-
-    const maxChars = 24;
-    const maxLines = 3;
-    let text = nodes.customText.value;
-
-    // 1. Check line count
-    const lines = text.split('\n');
-    if (lines.length > maxLines) {
-      // Trim extra lines
-      text = lines.slice(0, maxLines).join('\n');
-    }
-
-    // 2. Check total characters (including newlines? User said "24 chars total")
-    // Usually length check is on raw string.
-    if (text.length > maxChars) {
-      text = text.substring(0, maxChars);
-    }
-
-    // Update value if changed
-    if (nodes.customText.value !== text) {
-      nodes.customText.value = text;
-    }
-
-    // Update counter
-    if (nodes.customCounter) {
-      nodes.customCounter.textContent = `${text.length}/${maxChars}`;
-      nodes.customCounter.className = (text.length >= maxChars) ? 'text-danger d-block text-end' : 'text-muted d-block text-end';
-    }
+    // Legacy function - no longer needed with maxlength on inputs
+    // Kept for compatibility
   }
 
   function validateLotNumber() {
@@ -213,9 +202,13 @@
 
     if (mode === 'custom') {
       isCustom = true;
-      const text = nodes.customText?.value || '';
-      // We essentially just split by newline for display
-      content = text.split('\n');
+      const line1 = nodes.customLine1?.value || '';
+      const line2 = nodes.customLine2?.value || '';
+      const line3 = nodes.customLine3?.value || '';
+      // Only include non-empty lines
+      if (line1) content.push(line1);
+      if (line2) content.push(line2);
+      if (line3) content.push(line3);
     } else {
       // Date Modes
       const mfdInput = nodes.mfd.value;
