@@ -4,7 +4,7 @@ import path from "node:path";
 const projectRoot = process.cwd();
 const gitbookRoot = path.join(projectRoot, "src", "content", "gitbook");
 const assetsSrc = path.join(gitbookRoot, ".gitbook", "assets");
-const assetsDest = path.join(projectRoot, "public", "gitbook", "assets");
+const assetsDest = path.join(projectRoot, "public", "upload", "assets");
 
 const exists = async (target) => {
   try {
@@ -35,7 +35,7 @@ const rewriteMarkdown = async (filePath) => {
   const original = await fs.readFile(filePath, "utf-8");
   const replaced = original.replace(
     /(?:\.\.\/)+\.gitbook\/assets\/|\.\/\.gitbook\/assets\/|\.gitbook\/assets\//g,
-    "/gitbook/assets/"
+    "/upload/assets/"
   );
 
   if (replaced !== original) {

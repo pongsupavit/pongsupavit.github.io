@@ -1,6 +1,6 @@
 ---
 import { getCollection } from "astro:content";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 export async function getStaticPaths() {
@@ -51,6 +51,17 @@ try {
 const pageTitle =
   summaryTitle ?? entry.data?.title ?? headingMatch?.[1]?.trim() ?? entry.id;
 const category = entry.id.includes("/") ? entry.id.split("/")[0] : "general";
+let lastUpdated = null;
+if (entry.filePath) {
+  try {
+    lastUpdated = statSync(entry.filePath).mtime;
+  } catch {
+    lastUpdated = null;
+  }
+}
+const lastUpdatedText = lastUpdated
+  ? lastUpdated.toISOString().slice(0, 10)
+  : null;
 ---
 
 <html lang="en">
@@ -60,8 +71,14 @@ const category = entry.id.includes("/") ? entry.id.split("/")[0] : "general";
     <title>{pageTitle}</title>
   </head>
   <body>
-    <p><a href="/blog/">Back to Blog</a> · {category}</p>
+    <p>
+      <a href="/blog/">Back to Blog</a> · {category}
+      {lastUpdatedText ? ` · Updated ${lastUpdatedText}` : ""}
+    </p>
     <h1>{pageTitle}</h1>
+    {entry.data?.cover ? (
+      <img src={entry.data.cover} alt={pageTitle} />
+    ) : null}
     <Content />
   </body>
 </html>

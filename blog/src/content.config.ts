@@ -23,6 +23,7 @@ export const collections = {
         title: z.string().optional(),
         description: z.string().optional(),
         summary: z.string().optional(),
+        cover: z.string().optional(),
         hidden: z.boolean().optional(),
         pubDate: z.union([z.string(), z.date()]).optional(),
         date: z.union([z.string(), z.date()]).optional(),
