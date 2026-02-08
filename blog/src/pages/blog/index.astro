@@ -1,0 +1,142 @@
+---
+import { getCollection } from "astro:content";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+const entries = await getCollection("gitbook");
+
+const getTitle = (entry) => {
+  if (entry.data?.title) {
+    return entry.data.title;
+  }
+
+  const match = entry.body?.match(/^#\s+(.+)$/m);
+  if (match) {
+    return match[1].trim();
+  }
+
+  return entry.id;
+};
+
+const parseSummary = (text) => {
+  const sections = [];
+  const lines = text.split(/\r?\n/);
+  let current = { title: null, items: [] };
+
+  const pushCurrent = () => {
+    if (current.title || current.items.length > 0) {
+      sections.push(current);
+    }
+  };
+
+  for (const line of lines) {
+    const heading = line.match(/^##\s+(.+)/);
+    if (heading) {
+      pushCurrent();
+      current = { title: heading[1].trim(), items: [] };
+      continue;
+    }
+
+    const match = line.match(/^\s*\*\s+\[([^\]]+)\]\(([^)]+)\)/);
+    if (!match) {
+      continue;
+    }
+
+    const title = match[1].trim();
+    const href = match[2].trim();
+    if (/^https?:\/\//i.test(href)) {
+      continue;
+    }
+
+    const slug = href.replace(/^\.\//, "").replace(/\.md$/i, "");
+    current.items.push({ slug, title });
+  }
+
+  pushCurrent();
+  return sections;
+};
+
+const summaryPath = fileURLToPath(
+  new URL("../../content/gitbook/SUMMARY.md", import.meta.url)
+);
+let summarySections = [];
+try {
+  const summaryText = readFileSync(summaryPath, "utf-8");
+  summarySections = parseSummary(summaryText);
+} catch {
+  summarySections = [];
+}
+
+const isContentPage = (id) => {
+  return !/^(README|SUMMARY)\.md$/i.test(id);
+};
+
+const entryMap = new Map(
+  entries
+    .filter((entry) => isContentPage(entry.id))
+    .map((entry) => [entry.id.replace(/\.md$/, ""), entry])
+);
+
+const sections = summarySections
+  .map((section) => {
+    const items = section.items
+      .map((item) => {
+        const entry = entryMap.get(item.slug);
+        if (!entry || entry.data?.hidden) {
+          return null;
+        }
+
+        return {
+          id: item.slug,
+          title: item.title || getTitle(entry),
+        };
+      })
+      .filter(Boolean);
+
+    return { title: section.title, items };
+  })
+  .filter((section) => section.items.length > 0);
+
+const fallbackItems = entries
+  .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
+  .map((entry) => ({
+    id: entry.id.replace(/\.md$/, ""),
+    title: getTitle(entry),
+  }))
+  .sort((a, b) => a.title.localeCompare(b.title));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Blog</title>
+  </head>
+  <body>
+    <h1>Blog</h1>
+    {sections.length > 0 ? (
+      sections.map((section) => (
+        <section>
+          {section.title ? <h2>{section.title}</h2> : null}
+          <ul>
+            {section.items.map((item) => (
+              <li>
+                <a href={`/blog/${item.id}`}>{item.title}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    ) : (
+      <section>
+        <ul>
+          {fallbackItems.map((item) => (
+            <li>
+              <a href={`/blog/${item.id}`}>{item.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </body>
+</html>

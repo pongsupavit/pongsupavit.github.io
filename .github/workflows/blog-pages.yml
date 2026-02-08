@@ -30,6 +30,66 @@ jobs:
           rm -rf blog/src/content/gitbook
           git clone https://x-access-token:${GITBOOK_TOKEN}@github.com/pongsupavit/gitbook.git blog/src/content/gitbook
 
+      - name: Strip unsupported frontmatter
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path('blog/src/content/gitbook')
+
+          def strip_layout(text: str) -> str:
+            if not text.startswith('---'):
+              return text
+
+            lines = text.splitlines()
+            if len(lines) < 3:
+              return text
+
+            out = []
+            i = 0
+            in_frontmatter = False
+            skipping = False
+
+            while i < len(lines):
+              line = lines[i]
+
+              if i == 0 and line.strip() == '---':
+                in_frontmatter = True
+                out.append(line)
+                i += 1
+                continue
+
+              if in_frontmatter and line.strip() == '---':
+                in_frontmatter = False
+                out.append(line)
+                i += 1
+                continue
+
+              if in_frontmatter:
+                if not skipping and line.startswith('layout:'):
+                  skipping = True
+                  i += 1
+                  continue
+
+                if skipping:
+                  if line and not line.startswith((' ', '\t')):
+                    skipping = False
+                    continue
+                  i += 1
+                  continue
+
+              out.append(line)
+              i += 1
+
+            return '\n'.join(out) + ('\n' if text.endswith('\n') else '')
+
+          for path in root.rglob('*.md'):
+            original = path.read_text(encoding='utf-8')
+            updated = strip_layout(original)
+            if updated != original:
+              path.write_text(updated, encoding='utf-8')
+          PY
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -39,6 +99,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: blog
+
+      - name: Prepare GitBook assets
+        run: npm run prepare:gitbook
         working-directory: blog
 
       - name: Build

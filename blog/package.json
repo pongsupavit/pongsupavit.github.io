@@ -3,8 +3,12 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
+    "prepare:gitbook": "node scripts/prepare-gitbook.js",
+    "predev": "npm run prepare:gitbook",
     "dev": "astro dev",
+    "prebuild": "npm run prepare:gitbook",
     "build": "astro build",
+    "prepreview": "npm run prepare:gitbook",
     "preview": "astro preview",
     "astro": "astro"
   },

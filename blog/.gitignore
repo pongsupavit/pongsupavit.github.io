@@ -3,6 +3,9 @@ dist/
 # generated types
 .astro/
 
+# gitbook content (cloned locally)
+src/content/gitbook/
+
 # dependencies
 node_modules/
 

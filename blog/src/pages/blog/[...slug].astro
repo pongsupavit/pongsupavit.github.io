@@ -1,0 +1,67 @@
+---
+import { getCollection } from "astro:content";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("gitbook");
+  const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
+
+  return entries
+    .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
+    .map((entry) => ({
+      params: { slug: entry.id.replace(/\.md$/, "") },
+      props: { entry },
+    }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+const headingMatch = entry.body?.match(/^#\s+(.+)$/m);
+const summaryPath = fileURLToPath(
+  new URL("../../content/gitbook/SUMMARY.md", import.meta.url)
+);
+let summaryTitle = null;
+try {
+  const summaryText = readFileSync(summaryPath, "utf-8");
+  const lines = summaryText.split(/\r?\n/);
+  const entrySlug = entry.id.replace(/\.md$/, "");
+  for (const line of lines) {
+    const match = line.match(/^\s*\*\s+\[([^\]]+)\]\(([^)]+)\)/);
+    if (!match) {
+      continue;
+    }
+
+    const title = match[1].trim();
+    const href = match[2].trim();
+    if (/^https?:\/\//i.test(href)) {
+      continue;
+    }
+
+    const slug = href.replace(/^\.\//, "").replace(/\.md$/i, "");
+    if (slug === entrySlug) {
+      summaryTitle = title;
+      break;
+    }
+  }
+} catch {
+  summaryTitle = null;
+}
+
+const pageTitle =
+  summaryTitle ?? entry.data?.title ?? headingMatch?.[1]?.trim() ?? entry.id;
+const category = entry.id.includes("/") ? entry.id.split("/")[0] : "general";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <p><a href="/blog/">Back to Blog</a> · {category}</p>
+    <h1>{pageTitle}</h1>
+    <Content />
+  </body>
+</html>
