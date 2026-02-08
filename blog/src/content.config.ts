@@ -29,6 +29,7 @@ export const collections = {
     }),
   }),
   gitbook: defineCollection({
+    type: "content",
     loader: glob({ pattern: "**/*.md", base: gitbookBase }),
     schema: z
       .object({
