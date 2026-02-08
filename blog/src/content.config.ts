@@ -1,8 +1,4 @@
 import { defineCollection, z } from "astro:content";
-import { glob } from "astro/loaders";
-import { fileURLToPath } from "node:url";
-
-const gitbookBase = fileURLToPath(new URL("../gitbook/", import.meta.url));
 
 const parseDate = (value: unknown): Date => {
   if (value instanceof Date) {
@@ -30,7 +26,6 @@ export const collections = {
   }),
   gitbook: defineCollection({
     type: "content",
-    loader: glob({ pattern: "**/*.md", base: gitbookBase }),
     schema: z
       .object({
         title: z.string().optional(),

@@ -27,8 +27,8 @@ jobs:
         env:
           GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
         run: |
-          rm -rf blog/gitbook
-          git clone https://x-access-token:${GITBOOK_TOKEN}@github.com/pongsupavit/gitbook.git blog/gitbook
+          rm -rf blog/src/content/gitbook
+          git clone https://x-access-token:${GITBOOK_TOKEN}@github.com/pongsupavit/gitbook.git blog/src/content/gitbook
 
       - name: Setup Node
         uses: actions/setup-node@v4
