@@ -1,0 +1,28 @@
+---
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("gitbook");
+
+  return entries.map((entry) => ({
+    params: { slug: entry.id.replace(/\.md$/, "") },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{entry.data.title}</title>
+  </head>
+  <body>
+    <p><a href="/gitbook/">Back to GitBook</a></p>
+    <h1>{entry.data.title}</h1>
+    <Content />
+  </body>
+</html>

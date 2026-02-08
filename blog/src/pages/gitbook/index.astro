@@ -1,0 +1,29 @@
+---
+import { getCollection } from "astro:content";
+
+const entries = await getCollection("gitbook");
+const items = entries
+  .map((entry) => ({
+    id: entry.id.replace(/\.md$/, ""),
+    title: entry.data.title ?? entry.id,
+  }))
+  .sort((a, b) => a.title.localeCompare(b.title));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>GitBook</title>
+  </head>
+  <body>
+    <h1>GitBook</h1>
+    <ul>
+      {items.map((item) => (
+        <li>
+          <a href={`/gitbook/${item.id}`}>{item.title}</a>
+        </li>
+      ))}
+    </ul>
+  </body>
+</html>
