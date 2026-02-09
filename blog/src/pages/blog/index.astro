@@ -2,7 +2,7 @@
 import { getCollection } from "astro:content";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import Sidebar from "../../components/Sidebar.astro";
+import SidebarLayout from "../../layouts/SidebarLayout.astro";
 
 const entries = await getCollection("gitbook");
 
@@ -142,66 +142,36 @@ const fallbackItems = entries
   .sort((a, b) => a.title.localeCompare(b.title));
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Blog</title>
-    <link rel="stylesheet" href="/styles/home.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div class="layout">
-      <Sidebar />
-      <main class="main">
-        <h1>Blog</h1>
-        {sections.length > 0 ? (
-          sections.map((section) => (
-            <section>
-              {section.title ? <h2>{section.title}</h2> : null}
-              <ul>
-                {section.items.map((item) => (
-                  <li>
-                    {item.external ? (
-                      <a href={item.href} target="_blank" rel="noreferrer">
-                        {item.title}
-                      </a>
-                    ) : (
-                      <a href={item.href}>{item.title}</a>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))
-        ) : (
-          <section>
-            <ul>
-              {fallbackItems.map((item) => (
-                <li>
-                  <a href={`/blog/${item.id}/`}>{item.title}</a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-      </main>
-    </div>
-    <script>
-      const toggle = document.getElementById("sidebar-toggle");
-      const body = document.body;
-      if (toggle) {
-        toggle.addEventListener("click", () => {
-          body.classList.toggle("sidebar-collapsed");
-        });
-      }
-    </script>
-  </body>
-</html>
+<SidebarLayout title="Blog">
+  <h1>Blog</h1>
+  {sections.length > 0 ? (
+    sections.map((section) => (
+      <section>
+        {section.title ? <h2>{section.title}</h2> : null}
+        <ul>
+          {section.items.map((item) => (
+            <li>
+              {item.external ? (
+                <a href={item.href} target="_blank" rel="noreferrer">
+                  {item.title}
+                </a>
+              ) : (
+                <a href={item.href}>{item.title}</a>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  ) : (
+    <section>
+      <ul>
+        {fallbackItems.map((item) => (
+          <li>
+            <a href={`/blog/${item.id}/`}>{item.title}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</SidebarLayout>
