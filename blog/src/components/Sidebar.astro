@@ -30,6 +30,16 @@ const toLabel = (slug) =>
     .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
     .join(" ");
 
+const categoryIcons = {
+  technology: "grid",
+  "productivity-hack": "tag",
+  finance: "book",
+  ai: "info",
+  lifestyle: "home",
+  travel: "grid",
+  section: "tag",
+};
+
 const categories = entries
   .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
   .map((entry) => (entry.id.includes("/") ? entry.id.split("/")[0] : null))
@@ -117,7 +127,7 @@ const blogSection = {
       .sort((a, b) => a.localeCompare(b))
       .map((slug) => ({
         label: toLabel(slug),
-        icon: "grid",
+        icon: categoryIcons[slug] || "grid",
         href: `/blog/category/${slug}/`,
       })),
   ],
