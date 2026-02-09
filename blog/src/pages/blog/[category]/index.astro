@@ -1,0 +1,19 @@
+---
+const { category } = Astro.params;
+const target = `/blog/category/${category}/`;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Redirecting...</title>
+    <link rel="canonical" href={target} />
+  </head>
+  <body>
+    <p>Redirecting to <a href={target}>{target}</a>...</p>
+  </body>
+</html>
