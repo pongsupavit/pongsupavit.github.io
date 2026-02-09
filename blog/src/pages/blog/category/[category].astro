@@ -4,6 +4,23 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import Sidebar from "../../../components/Sidebar.astro";
 
+export async function getStaticPaths() {
+  const entries = await getCollection("gitbook");
+  const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
+  const categories = Array.from(
+    new Set(
+      entries
+        .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
+        .map((entry) => (entry.id.includes("/") ? entry.id.split("/")[0] : null))
+        .filter(Boolean)
+    )
+  );
+
+  return categories.map((slug) => ({
+    params: { category: slug },
+  }));
+}
+
 const entries = await getCollection("gitbook");
 const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
 const { category } = Astro.params;
@@ -129,6 +146,7 @@ const pageTitle = toLabel(category);
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width" />
     <title>{pageTitle}</title>
     <link rel="stylesheet" href="/styles/home.css" />
