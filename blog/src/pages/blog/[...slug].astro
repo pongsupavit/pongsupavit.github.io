@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import Sidebar from "../../components/Sidebar.astro";
 
 export async function getStaticPaths() {
   const entries = await getCollection("gitbook");
@@ -62,23 +63,70 @@ if (entry.filePath) {
 const lastUpdatedText = lastUpdated
   ? lastUpdated.toISOString().slice(0, 10)
   : null;
+const lastUpdatedIso = lastUpdated ? lastUpdated.toISOString() : null;
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <title>{pageTitle}</title>
-  </head>
-  <body>
-    <p>
-      <a href="/blog/">Back to Blog</a> · {category}
-      {lastUpdatedText ? ` · Updated ${lastUpdatedText}` : ""}
-    </p>
-    <h1>{pageTitle}</h1>
-    {entry.data?.cover ? (
-      <img src={entry.data.cover} alt={pageTitle} />
+    {entry.data?.description ? (
+      <meta name="description" content={entry.data.description} />
     ) : null}
-    <Content />
+    <link rel="stylesheet" href="/styles/home.css" />
+    <link rel="stylesheet" href="/styles/article.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="article-page">
+    <div class="page-glow" aria-hidden="true"></div>
+    <div class="layout">
+      <Sidebar />
+      <main class="main">
+        <section class="article">
+          <nav class="article__nav">
+            <a href="/blog/">Back to Blog</a>
+          </nav>
+          <header class="article__header">
+            <div class="meta">
+              <span class="pill">{category}</span>
+              {lastUpdatedText ? (
+                <span class="meta__time">
+                  <span class="dot">•</span>
+                  <time datetime={lastUpdatedIso}>Updated {lastUpdatedText}</time>
+                </span>
+              ) : null}
+            </div>
+            <h1 class="title">{pageTitle}</h1>
+            {entry.data?.description ? (
+              <p class="lede">{entry.data.description}</p>
+            ) : null}
+            {entry.data?.cover ? (
+              <figure class="cover">
+                <img src={entry.data.cover} alt={pageTitle} loading="lazy" />
+              </figure>
+            ) : null}
+          </header>
+          <article class="content">
+            <Content />
+          </article>
+        </section>
+      </main>
+    </div>
+    <script>
+      const toggle = document.getElementById("sidebar-toggle");
+      const body = document.body;
+      if (toggle) {
+        toggle.addEventListener("click", () => {
+          body.classList.toggle("sidebar-collapsed");
+        });
+      }
+    </script>
   </body>
 </html>

@@ -1,0 +1,230 @@
+---
+import { getCollection } from "astro:content";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { sidebarSections, iconPaths } from "../data/sidebar";
+
+const entries = await getCollection("gitbook");
+const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
+const toLabel = (slug) =>
+  slug
+    .split("-")
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
+    .join(" ");
+
+const categories = entries
+  .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
+  .map((entry) => (entry.id.includes("/") ? entry.id.split("/")[0] : null))
+  .filter(Boolean);
+
+const parseSummaryItems = (text) => {
+  const items = [];
+  const lines = text.split(/\r?\n/);
+  let currentSection = null;
+
+  for (const line of lines) {
+    const heading = line.match(/^##\s+(.+)/);
+    if (heading) {
+      currentSection = heading[1].trim();
+      continue;
+    }
+
+    const match = line.match(/^\s*\*\s+\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/);
+    if (!match) {
+      continue;
+    }
+
+    const label = match[1].trim();
+    const href = match[2].trim();
+    const titleAttr = match[3]?.trim();
+    const menuLabel = titleAttr || label;
+    const isExternal = /^https?:\/\//i.test(href);
+    const slug = isExternal ? null : href.replace(/^\.\//, "").replace(/\.md$/i, "");
+
+    items.push({ label, menuLabel, href, titleAttr, isExternal, slug, section: currentSection });
+  }
+
+  return items;
+};
+
+const summaryPath = fileURLToPath(new URL("../content/gitbook/SUMMARY.md", import.meta.url));
+let summaryItems = [];
+let homeLink = null;
+let templateItem = null;
+let appItem = null;
+let supportItems = [];
+try {
+  const summaryText = readFileSync(summaryPath, "utf-8");
+  summaryItems = parseSummaryItems(summaryText);
+  homeLink =
+    summaryItems.find(
+      (item) => item.titleAttr && item.titleAttr.toLowerCase() === "home" && !item.isExternal
+    ) ||
+    summaryItems.find(
+      (item) =>
+        !item.isExternal &&
+        (item.label.toLowerCase() === "introduction" ||
+          item.titleAttr?.toLowerCase() === "introduction")
+    );
+
+  templateItem = summaryItems.find(
+    (item) => item.section && item.section.toLowerCase() === "template" && !item.isExternal
+  );
+  appItem = summaryItems.find(
+    (item) => item.section && item.section.toLowerCase() === "app"
+  );
+
+  supportItems = summaryItems.filter(
+    (item) => item.section && item.section.toLowerCase() === "support"
+  );
+} catch {
+  summaryItems = [];
+  homeLink = null;
+  templateItem = null;
+  appItem = null;
+  supportItems = [];
+}
+
+const blogSection = {
+  title: "Article",
+  items: [
+    { label: "All Articles", icon: "book", href: "/blog/" },
+    ...Array.from(new Set(categories))
+      .sort((a, b) => a.localeCompare(b))
+      .map((slug) => ({
+        label: toLabel(slug),
+        icon: "grid",
+        href: `/blog/${slug}/`,
+      })),
+  ],
+};
+
+const supportSection = {
+  title: "Support",
+  items: supportItems.map((item) => ({
+    label: item.menuLabel || item.label,
+    icon: "info",
+    href: item.isExternal ? item.href : `/blog/${item.slug}`,
+  })),
+};
+
+const mainSection = sidebarSections.find((section) => section.title === "Main");
+const resourcesSection = sidebarSections.find((section) => section.title === "Resources");
+const orderedSections = [mainSection, blogSection, resourcesSection, supportSection].filter(
+  (section) => section && section.items && section.items.length > 0
+);
+
+const sections = orderedSections.map((section) => {
+  if (section.title === "Main") {
+    const items = section.items.map((item) => {
+      if (!item.isHome || !homeLink) {
+        return item;
+      }
+
+      return {
+        ...item,
+        label: homeLink.menuLabel || homeLink.label,
+        href: `/blog/${homeLink.slug}`,
+      };
+    });
+
+    return { ...section, items };
+  }
+
+  if (section.title === "Resources") {
+    const items = section.items.map((item) => {
+      if (item.key === "template" && templateItem?.slug) {
+        return {
+          ...item,
+          label: templateItem.section || "Template",
+          href: `/blog/${templateItem.slug}`,
+        };
+      }
+
+      if (item.key === "app" && appItem) {
+        return {
+          ...item,
+          label: appItem.section || "App",
+          href: appItem.isExternal ? appItem.href : `/blog/${appItem.slug}`,
+        };
+      }
+
+      return item;
+    });
+
+    return { ...section, items };
+  }
+
+  return section;
+});
+---
+
+<aside class="sidebar">
+  <div class="sidebar__brand">
+    <button class="collapse-btn" id="sidebar-toggle" aria-label="Toggle sidebar">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 6h16M4 12h10M4 18h16" />
+      </svg>
+    </button>
+    <span class="brand__mark" aria-hidden="true">
+      <svg class="brand__logo" viewBox="0 0 100 100">
+        <defs>
+          <radialGradient id="logoGlow" cx="40%" cy="35%" r="60%">
+            <stop offset="0%" stop-color="#ffd28a" />
+            <stop offset="55%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#d97706" />
+          </radialGradient>
+        </defs>
+        <rect x="4" y="4" width="92" height="92" rx="18" fill="#0b1226" />
+        <circle cx="50" cy="50" r="22" fill="url(#logoGlow)" />
+      </svg>
+    </span>
+    <span class="brand__text"> PONGSUPAVIT</span>
+  </div>
+
+  <nav class="sidebar__nav">
+    {sections.map((section) => (
+      <div class="sidebar__section">
+        <button class="section-toggle" type="button" aria-expanded="true">
+          <span class="sidebar__title">{section.title}</span>
+          <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+        <ul class="section-items">
+          {section.items.map((item) => (
+            <li>
+              <a href={item.href ?? "#"} class={item.isHome ? "active" : ""}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d={iconPaths[item.icon]}></path>
+                </svg>
+                <span>{item.label}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </nav>
+    <div class="sidebar__footer">
+      <button class="icon-btn" aria-label="Theme">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3a9 9 0 1 0 9 9c0-.4 0-.9-.1-1.3a7.2 7.2 0 0 1-2.4.4 7 7 0 0 1-6.9-7 7 7 0 0 1 .4-2.4C12.9 3 12.4 3 12 3z"></path>
+        </svg>
+      </button>
+    </div>
+
+</aside>
+
+<script>
+  document.querySelectorAll(".section-toggle").forEach((toggle) => {
+    toggle.addEventListener("click", () => {
+      const section = toggle.closest(".sidebar__section");
+      if (!section) {
+        return;
+      }
+      const isCollapsed = section.classList.toggle("collapsed");
+      toggle.setAttribute("aria-expanded", String(!isCollapsed));
+    });
+  });
+</script>
