@@ -3,6 +3,12 @@ import { getCollection } from "astro:content";
 import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import SidebarLayout from "../layouts/SidebarLayout.astro";
+import { blogCategories } from "../content/blogCategories";
+
+function getCategoryColor(category) {
+  const found = blogCategories.find(c => c.name.toLowerCase() === category.toLowerCase());
+  return found ? found.color : "blue";
+}
 
 export async function getStaticPaths() {
   const entries = await getCollection("gitbook");
@@ -85,37 +91,233 @@ const lastUpdatedIso = lastUpdated ? lastUpdated.toISOString() : null;
   description={entry.data?.description}
   bodyClass="article-page"
   extraStyles={["/styles/article.css"]}
-  extraFonts={[
-    "https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap",
-  ]}
 >
   <div class="page-glow" aria-hidden="true"></div>
-  <section class="article">
-    <nav class="article__nav">
-      <a href="/blog/">Back to Blog</a>
-    </nav>
-    <header class="article__header">
-      <div class="meta">
-        <span class="pill">{category}</span>
-        {lastUpdatedText ? (
-          <span class="meta__time">
-            <span class="dot">•</span>
-            <time datetime={lastUpdatedIso}>Updated {lastUpdatedText}</time>
-          </span>
+  <div class="article-shell">
+    <section class="article">
+      <nav class="article__nav">
+        <a href="/blog/">Back to Blog</a>
+      </nav>
+      <header class="article__header">
+        <div class="article__meta-row">
+          <div class="meta">
+            <a class={`pill pill-${getCategoryColor(category)}`} href={`/category/${category}/`}>{category}</a>
+          </div>
+          <button
+            class="copy-markdown"
+            type="button"
+            aria-label="Copy as Markdown"
+            data-tooltip="Copy"
+          ></button>
+        </div>
+        <h1 class="title">{pageTitle}</h1>
+        {entry.data?.description ? (
+          <p class="lede">{entry.data.description}</p>
         ) : null}
+        {entry.data?.cover ? (
+          <figure class="cover">
+            <img src={entry.data.cover} alt={pageTitle} loading="lazy" />
+          </figure>
+        ) : null}
+      </header>
+      <article class="content">
+        <Content />
+        {lastUpdatedText ? (
+          <div class="article__updated">
+            <time datetime={lastUpdatedIso}>Last updated {lastUpdatedText}</time>
+          </div>
+        ) : null}
+      </article>
+    </section>
+    <aside class="toc" aria-label="Table of contents">
+      <div class="toc__inner">
+        <p class="toc__title">On This Page</p>
+        <nav class="toc__nav">
+          <ul class="toc__list"></ul>
+        </nav>
       </div>
-      <h1 class="title">{pageTitle}</h1>
-      {entry.data?.description ? (
-        <p class="lede">{entry.data.description}</p>
-      ) : null}
-      {entry.data?.cover ? (
-        <figure class="cover">
-          <img src={entry.data.cover} alt={pageTitle} loading="lazy" />
-        </figure>
-      ) : null}
-    </header>
-    <article class="content">
-      <Content />
-    </article>
-  </section>
+    </aside>
+  </div>
+  <script define:vars={{ markdownSource: entry.body ?? "" }}>
+    const copyMarkdownButton = document.querySelector(".copy-markdown");
+    const copyIcon =
+      '<span class="material-icons-outlined" aria-hidden="true">content_copy</span>';
+    const successIcon =
+      '<span class="material-icons-outlined" aria-hidden="true">check</span>';
+    if (copyMarkdownButton) {
+      copyMarkdownButton.innerHTML = copyIcon;
+      copyMarkdownButton.setAttribute("data-tooltip", "Copy");
+    }
+    if (copyMarkdownButton && markdownSource) {
+      copyMarkdownButton.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(markdownSource);
+          copyMarkdownButton.innerHTML = successIcon;
+          copyMarkdownButton.classList.add("is-success");
+          copyMarkdownButton.setAttribute("aria-label", "Copied");
+          copyMarkdownButton.setAttribute("data-tooltip", "Copied");
+          setTimeout(() => {
+            copyMarkdownButton.innerHTML = copyIcon;
+            copyMarkdownButton.classList.remove("is-success");
+            copyMarkdownButton.setAttribute("aria-label", "Copy as Markdown");
+            copyMarkdownButton.setAttribute("data-tooltip", "Copy");
+          }, 1200);
+        } catch {
+          copyMarkdownButton.innerHTML = copyIcon;
+          copyMarkdownButton.classList.remove("is-success");
+          copyMarkdownButton.setAttribute("aria-label", "Copy failed");
+          copyMarkdownButton.setAttribute("data-tooltip", "Copy failed");
+          setTimeout(() => {
+            copyMarkdownButton.innerHTML = copyIcon;
+            copyMarkdownButton.setAttribute("aria-label", "Copy as Markdown");
+            copyMarkdownButton.setAttribute("data-tooltip", "Copy");
+          }, 1200);
+        }
+      });
+    }
+
+    const tocList = document.querySelector(".toc__list");
+    const tocNav = document.querySelector(".toc__nav");
+    if (tocList) {
+      const slugCounts = new Map();
+      const headings = Array.from(document.querySelectorAll(".content h2, .content h3"));
+      const tocLinks = [];
+      headings.forEach((heading) => {
+        const text = heading.textContent?.trim();
+        if (!text) {
+          return;
+        }
+
+        let id = heading.id;
+        if (!id) {
+          const base = text
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}]+/gu, "-")
+            .replace(/^-+|-+$/g, "") || "section";
+          const next = (slugCounts.get(base) || 0) + 1;
+          slugCounts.set(base, next);
+          id = next === 1 ? base : `${base}-${next}`;
+          heading.id = id;
+        }
+
+        const item = document.createElement("li");
+        item.className = heading.tagName === "H3" ? "toc__item toc__item--sub" : "toc__item";
+        const link = document.createElement("a");
+        link.href = `#${id}`;
+        link.textContent = text;
+        item.appendChild(link);
+        tocList.appendChild(item);
+        tocLinks.push({ id, heading, link });
+      });
+
+      if (headings.length === 0) {
+        tocList.closest(".toc")?.classList.add("toc--empty");
+      } else {
+        const setActive = (id) => {
+          tocLinks.forEach(({ link, id: linkId }) => {
+            link.classList.toggle("active", linkId === id);
+          });
+        };
+
+        const headingTops = () =>
+          tocLinks.map(({ id, heading }) => ({
+            id,
+            top: heading.getBoundingClientRect().top + window.scrollY,
+          }));
+
+        let cachedTops = headingTops();
+        let ticking = false;
+        const updateActive = () => {
+          ticking = false;
+          const offset = 140;
+          const pos = window.scrollY + offset;
+          let activeId = cachedTops[0]?.id;
+          for (const item of cachedTops) {
+            if (item.top <= pos) {
+              activeId = item.id;
+            } else {
+              break;
+            }
+          }
+          if (activeId) {
+            setActive(activeId);
+          }
+        };
+
+        const onScroll = () => {
+          if (ticking) {
+            return;
+          }
+          ticking = true;
+          window.requestAnimationFrame(updateActive);
+        };
+
+        const onResize = () => {
+          cachedTops = headingTops();
+          onScroll();
+        };
+
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", onResize);
+        setTimeout(() => {
+          cachedTops = headingTops();
+          updateActive();
+        }, 0);
+      }
+    }
+
+    document.querySelectorAll(".content pre > code").forEach((code) => {
+      const pre = code.parentElement;
+      if (!pre || pre.closest(".code-block")) {
+        return;
+      }
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "code-block";
+
+      const meta = document.createElement("div");
+      meta.className = "code-meta";
+
+      const match = Array.from(code.classList)
+        .map((cls) => cls.match(/^language-(.+)$/))
+        .find(Boolean);
+      if (match) {
+        const lang = document.createElement("span");
+        lang.className = "code-lang";
+        lang.textContent = match[1];
+        meta.appendChild(lang);
+      }
+
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.className = "code-copy";
+      copy.setAttribute("aria-label", "Copy code");
+      copy.innerHTML = copyIcon;
+      copy.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(code.textContent || "");
+          copy.innerHTML = successIcon;
+          copy.classList.add("is-success");
+          copy.setAttribute("aria-label", "Copied");
+          setTimeout(() => {
+            copy.innerHTML = copyIcon;
+            copy.classList.remove("is-success");
+            copy.setAttribute("aria-label", "Copy code");
+          }, 1200);
+        } catch {
+          copy.classList.remove("is-success");
+          copy.setAttribute("aria-label", "Copy failed");
+          setTimeout(() => {
+            copy.setAttribute("aria-label", "Copy code");
+          }, 1200);
+        }
+      });
+      meta.appendChild(copy);
+      pre.parentNode.insertBefore(wrapper, pre);
+      if (meta.childElementCount > 0) {
+        wrapper.appendChild(meta);
+      }
+      wrapper.appendChild(pre);
+    });
+  </script>
 </SidebarLayout>

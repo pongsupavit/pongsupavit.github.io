@@ -67,6 +67,11 @@ body {
   stroke-width: 1.6;
 }
 
+.collapse-btn .material-icons-outlined {
+  font-size: 20px;
+  line-height: 1;
+}
+
 .sidebar__brand {
   display: flex;
   align-items: center;
@@ -148,12 +153,9 @@ body {
   background: var(--sidebar-hover);
 }
 
-.section-toggle .chevron {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: var(--sidebar-title);
-  stroke-width: 2;
+.section-toggle .chevron-icon {
+  font-size: 16px;
+  color: var(--sidebar-title);
   opacity: 1;
   transform: translateY(0);
   align-self: center;
@@ -161,11 +163,11 @@ body {
   display: block;
 }
 
-.sidebar__section:hover .section-toggle .chevron {
+.sidebar__section:hover .section-toggle .chevron-icon {
   opacity: 1;
 }
 
-.sidebar__section.collapsed .section-toggle .chevron {
+.sidebar__section.collapsed .section-toggle .chevron-icon {
   transform: rotate(-90deg);
   opacity: 1;
 }
@@ -190,11 +192,9 @@ body {
 }
 
 .sidebar__section a .menu-icon {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
-  stroke: none;
-  display: block;
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
 }
 
 .sidebar__section a.active {
@@ -301,6 +301,11 @@ body.sidebar-collapsed .sidebar__footer {
   fill: none;
   stroke: currentColor;
   stroke-width: 1.6;
+}
+
+.icon-btn .material-icons-outlined {
+  font-size: 20px;
+  line-height: 1;
 }
 
 .main {

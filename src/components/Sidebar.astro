@@ -2,7 +2,7 @@
 import { getCollection } from "astro:content";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { sidebarSections, iconPaths } from "../data/sidebar";
+import { sidebarSections, iconNames } from "../data/sidebar";
 
 const entries = await getCollection("gitbook");
 const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
@@ -118,7 +118,7 @@ const blogSection = {
       .sort((a, b) => a.localeCompare(b))
       .map((slug) => ({
         label: toLabel(slug),
-        icon: iconPaths[slug] ? slug : "grid",
+        icon: iconNames[slug] ? slug : "grid",
         href: `/category/${slug}/`,
       })),
   ],
@@ -187,9 +187,7 @@ const sections = orderedSections.map((section) => {
 <aside class="sidebar">
   <div class="sidebar__brand">
     <button class="collapse-btn" id="sidebar-toggle" aria-label="Toggle sidebar">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 6h16M4 12h10M4 18h16" />
-      </svg>
+      <span class="material-icons-outlined" aria-hidden="true">menu</span>
     </button>
     <span class="brand__mark" aria-hidden="true">
       <svg class="brand__logo" viewBox="0 0 100 100">
@@ -212,17 +210,15 @@ const sections = orderedSections.map((section) => {
       <div class="sidebar__section">
         <button class="section-toggle" type="button" aria-expanded="true">
           <span class="sidebar__title">{section.title}</span>
-          <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
+          <span class="material-icons-outlined chevron-icon" aria-hidden="true">expand_more</span>
         </button>
         <ul class="section-items">
           {section.items.map((item) => (
             <li>
               <a href={item.href ?? "#"} class={item.isHome ? "active" : ""}>
-                <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d={iconPaths[item.icon]}></path>
-                </svg>
+                <span class="material-icons-outlined menu-icon" aria-hidden="true">
+                  {iconNames[item.icon] ?? "help_outline"}
+                </span>
                 <span>{item.label}</span>
               </a>
             </li>
@@ -233,9 +229,7 @@ const sections = orderedSections.map((section) => {
   </nav>
     <div class="sidebar__footer">
       <button class="icon-btn" aria-label="Theme">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 3a9 9 0 1 0 9 9c0-.4 0-.9-.1-1.3a7.2 7.2 0 0 1-2.4.4 7 7 0 0 1-6.9-7 7 7 0 0 1 .4-2.4C12.9 3 12.4 3 12 3z"></path>
-        </svg>
+        <span class="material-icons-outlined" aria-hidden="true">dark_mode</span>
       </button>
     </div>
 
