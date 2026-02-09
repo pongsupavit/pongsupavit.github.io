@@ -30,15 +30,6 @@ const toLabel = (slug) =>
     .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
     .join(" ");
 
-const categoryIcons = {
-  technology: "grid",
-  "productivity-hack": "tag",
-  finance: "book",
-  ai: "info",
-  lifestyle: "home",
-  travel: "grid",
-  section: "tag",
-};
 
 const categories = entries
   .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
@@ -127,7 +118,7 @@ const blogSection = {
       .sort((a, b) => a.localeCompare(b))
       .map((slug) => ({
         label: toLabel(slug),
-        icon: categoryIcons[slug] || "grid",
+        icon: iconPaths[slug] ? slug : "grid",
         href: `/blog/category/${slug}/`,
       })),
   ],
@@ -229,7 +220,7 @@ const sections = orderedSections.map((section) => {
           {section.items.map((item) => (
             <li>
               <a href={item.href ?? "#"} class={item.isHome ? "active" : ""}>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
+                <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
                   <path d={iconPaths[item.icon]}></path>
                 </svg>
                 <span>{item.label}</span>
