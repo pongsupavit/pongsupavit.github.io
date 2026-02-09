@@ -124,7 +124,7 @@ const sections = orderedSections.map((section) => {
       return {
         ...item,
         label: homeLink.menuLabel || homeLink.label,
-        href: `/blog/${homeLink.slug}`,
+        href: `/blog/${homeLink.slug}/`,
       };
     });
 
@@ -137,7 +137,7 @@ const sections = orderedSections.map((section) => {
         return {
           ...item,
           label: templateItem.section || "Template",
-          href: `/blog/${templateItem.slug}`,
+          href: `/blog/${templateItem.slug}/`,
         };
       }
 
@@ -145,7 +145,7 @@ const sections = orderedSections.map((section) => {
         return {
           ...item,
           label: appItem.section || "App",
-          href: appItem.isExternal ? appItem.href : `/blog/${appItem.slug}`,
+          href: appItem.isExternal ? appItem.href : `/blog/${appItem.slug}/`,
         };
       }
 

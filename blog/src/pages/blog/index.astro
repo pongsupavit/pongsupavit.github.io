@@ -103,7 +103,7 @@ const sections = summarySections
         return {
           id: item.slug,
           title: item.title || getTitle(entry),
-          href: `/blog/${item.slug}`,
+          href: `/blog/${item.slug}/`,
           external: false,
         };
       })
@@ -165,7 +165,7 @@ const fallbackItems = entries
             <ul>
               {fallbackItems.map((item) => (
                 <li>
-                  <a href={`/blog/${item.id}`}>{item.title}</a>
+                  <a href={`/blog/${item.id}/`}>{item.title}</a>
                 </li>
               ))}
             </ul>
