@@ -6,6 +6,24 @@ import { sidebarSections, iconPaths } from "../data/sidebar";
 
 const entries = await getCollection("gitbook");
 const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
+const buildSlugMap = (items) => {
+  const counts = new Map();
+  const map = new Map();
+
+  for (const entry of items) {
+    if (!isContentPage(entry.id)) {
+      continue;
+    }
+
+    const base = entry.id.replace(/\.md$/, "").split("/").pop();
+    const next = (counts.get(base) || 0) + 1;
+    counts.set(base, next);
+    const slug = next === 1 ? base : `${base}-${next}`;
+    map.set(entry.id.replace(/\.md$/, ""), slug);
+  }
+
+  return map;
+};
 const toLabel = (slug) =>
   slug
     .split("-")
@@ -16,6 +34,12 @@ const categories = entries
   .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
   .map((entry) => (entry.id.includes("/") ? entry.id.split("/")[0] : null))
   .filter(Boolean);
+const entryMap = new Map(
+  entries
+    .filter((entry) => isContentPage(entry.id))
+    .map((entry) => [entry.id.replace(/\.md$/, ""), entry])
+);
+const slugMap = buildSlugMap(entries);
 
 const parseSummaryItems = (text) => {
   const items = [];
@@ -94,7 +118,7 @@ const blogSection = {
       .map((slug) => ({
         label: toLabel(slug),
         icon: "grid",
-        href: `/blog/${slug}/`,
+        href: `/blog/category/${slug}/`,
       })),
   ],
 };
@@ -124,7 +148,7 @@ const sections = orderedSections.map((section) => {
       return {
         ...item,
         label: homeLink.menuLabel || homeLink.label,
-        href: `/blog/${homeLink.slug}/`,
+        href: `/blog/${slugMap.get(homeLink.slug)}/`,
       };
     });
 
@@ -137,7 +161,7 @@ const sections = orderedSections.map((section) => {
         return {
           ...item,
           label: templateItem.section || "Template",
-          href: `/blog/${templateItem.slug}/`,
+          href: `/blog/${slugMap.get(templateItem.slug)}/`,
         };
       }
 
@@ -145,7 +169,7 @@ const sections = orderedSections.map((section) => {
         return {
           ...item,
           label: appItem.section || "App",
-          href: appItem.isExternal ? appItem.href : `/blog/${appItem.slug}/`,
+          href: appItem.isExternal ? appItem.href : `/blog/${slugMap.get(appItem.slug)}/`,
         };
       }
 

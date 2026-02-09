@@ -76,11 +76,31 @@ const isContentPage = (id) => {
   return !/^(README|SUMMARY)\.md$/i.test(id);
 };
 
+const buildSlugMap = (items) => {
+  const counts = new Map();
+  const map = new Map();
+
+  for (const entry of items) {
+    if (!isContentPage(entry.id)) {
+      continue;
+    }
+
+    const base = entry.id.replace(/\.md$/, "").split("/").pop();
+    const next = (counts.get(base) || 0) + 1;
+    counts.set(base, next);
+    const slug = next === 1 ? base : `${base}-${next}`;
+    map.set(entry.id.replace(/\.md$/, ""), slug);
+  }
+
+  return map;
+};
+
 const entryMap = new Map(
   entries
     .filter((entry) => isContentPage(entry.id))
     .map((entry) => [entry.id.replace(/\.md$/, ""), entry])
 );
+const slugMap = buildSlugMap(entries);
 
 const sections = summarySections
   .map((section) => {
@@ -103,7 +123,7 @@ const sections = summarySections
         return {
           id: item.slug,
           title: item.title || getTitle(entry),
-          href: `/blog/${item.slug}/`,
+          href: `/blog/${slugMap.get(entry.id.replace(/\.md$/, ""))}/`,
           external: false,
         };
       })
@@ -116,7 +136,7 @@ const sections = summarySections
 const fallbackItems = entries
   .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
   .map((entry) => ({
-    id: entry.id.replace(/\.md$/, ""),
+    id: slugMap.get(entry.id.replace(/\.md$/, "")),
     title: getTitle(entry),
   }))
   .sort((a, b) => a.title.localeCompare(b.title));

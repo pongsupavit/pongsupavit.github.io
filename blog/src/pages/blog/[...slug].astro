@@ -7,11 +7,25 @@ import Sidebar from "../../components/Sidebar.astro";
 export async function getStaticPaths() {
   const entries = await getCollection("gitbook");
   const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
+  const counts = new Map();
+  const slugMap = new Map();
+
+  for (const entry of entries) {
+    if (!isContentPage(entry.id)) {
+      continue;
+    }
+
+    const base = entry.id.replace(/\.md$/, "").split("/").pop();
+    const next = (counts.get(base) || 0) + 1;
+    counts.set(base, next);
+    const slug = next === 1 ? base : `${base}-${next}`;
+    slugMap.set(entry.id.replace(/\.md$/, ""), slug);
+  }
 
   return entries
     .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
     .map((entry) => ({
-      params: { slug: entry.id.replace(/\.md$/, "") },
+      params: { slug: slugMap.get(entry.id.replace(/\.md$/, "")) },
       props: { entry },
     }));
 }
