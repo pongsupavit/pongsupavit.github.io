@@ -1,10 +1,19 @@
 ---
+
 import { getCollection } from "astro:content";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import SidebarLayout from "../../layouts/SidebarLayout.astro";
 
-const entries = await getCollection("gitbook");
+const { blogCategories } = await import("../../content/blogCategories.ts");
+
+const entries = (await getCollection("gitbook")).filter((entry) => {
+  // Extract category from entry path (e.g., 'productivity-hack/gmail-filter.md' => 'Productivity Hack')
+  const categoryKey = entry.id.split("/")[0].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  // Find matching category in blogCategories
+  const cat = blogCategories.find(c => c.name.toLowerCase() === categoryKey.toLowerCase());
+  return cat && cat.type === "blog";
+});
 
 const getTitle = (entry) => {
   if (entry.data?.title) {

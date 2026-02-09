@@ -1,33 +1,59 @@
 export interface BlogCategory {
   name: string;
-  color: "blue" | "green" | "red" | "purple" | "yellow";
+  type: "blog" | "app" | "template";
   icon: string;
+  color: "purple" | "blue" | "green" | "yellow" | "red" | "grey";
+  section: string;
 }
 
 export const blogCategories: BlogCategory[] = [
   {
     name: "Technology",
-    color: "blue",
-    icon: "rocket_launch"
+    type: "blog",
+    icon: "rocket_launch",
+    color: "purple",
+    section: "Article"
   },
   {
     name: "Productivity Hack",
-    color: "green",
-    icon: "schedule"
+    type: "blog",
+    icon: "schedule",
+    color: "blue",
+    section: "Article"
   },
   {
     name: "Finance",
-    color: "red",
-    icon: "paid"
+    type: "blog",
+    icon: "paid",
+    color: "green",
+    section: "Article"
   },
   {
     name: "Lifestyle",
-    color: "purple",
-    icon: "favorite"
+    type: "blog",
+    icon: "favorite",
+    color: "yellow",
+    section: "Article"
   },
   {
     name: "Travel",
-    color: "yellow",
-    icon: "travel"
+    type: "blog",
+    icon: "travel",
+    color: "red",
+    section: "Article"
+  },
+  {
+    name: "App",
+    type: "app",
+    icon: "desktop_windows",
+    color: "grey",
+    section: "Free Stuff"
+  },
+  {
+    name: "Template",
+    type: "template",
+    icon: "article",
+    color: "grey",
+    section: "Free Stuff"
   }
 ];

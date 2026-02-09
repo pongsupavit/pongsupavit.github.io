@@ -19,16 +19,14 @@
 
   /* Category color variables */
   :root {
-    --category-green-bg: #d6e4da;
-    --category-green-text: #3a4a3f;
-    --category-yellow-bg: #f6ecd7;
-    --category-yellow-text: #7a6a4f;
-    --category-red-bg: #f6e0e0;
-    --category-red-text: #a36a6a;
     --category-blue-bg: #e3ebf7;
     --category-blue-text: #4a5a7a;
-    --category-gray-bg: #d6d6d6;
-    --category-gray-text: #4a4a4a;
+    --category-green-bg: #d6e4da;
+    --category-green-text: #3a4a3f;
+    --category-red-bg: #f6e0e0;
+    --category-red-text: #a36a6a;
     --category-purple-bg: #e3d6f6;
     --category-purple-text: #6a4a7a;
+    --category-yellow-bg: #f6ecd7;
+    --category-yellow-text: #7a6a4f;
   }
