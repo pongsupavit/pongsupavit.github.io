@@ -27,15 +27,15 @@ jobs:
         env:
           GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
         run: |
-          rm -rf blog/src/content/gitbook
-          git clone https://x-access-token:${GITBOOK_TOKEN}@github.com/pongsupavit/gitbook.git blog/src/content/gitbook
+          rm -rf src/content/gitbook
+          git clone https://x-access-token:${GITBOOK_TOKEN}@github.com/pongsupavit/gitbook.git src/content/gitbook
 
       - name: Strip unsupported frontmatter
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          root = Path('blog/src/content/gitbook')
+          root = Path('src/content/gitbook')
 
           def strip_layout(text: str) -> str:
             if not text.startswith('---'):
@@ -95,19 +95,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: blog/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: blog
 
       - name: Prepare GitBook assets
         run: npm run prepare:gitbook
-        working-directory: blog
 
       - name: Build
         run: npm run build
-        working-directory: blog
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -115,7 +112,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: blog/dist
+          path: dist
 
   deploy:
     needs: build
