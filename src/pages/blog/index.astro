@@ -1,157 +1,69 @@
 ---
 import { getCollection } from "astro:content";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import SidebarLayout from "../../layouts/SidebarLayout.astro";
+import { getConfigItems, getSummaryItems, buildSlugMap } from "../../utils/gitbook";
 
-// Parse unified config for blog categories
-const configPath = path.resolve(process.cwd(), "src/content/gitbook/config/config.md");
-let validBlogCategories = [];
-try {
-  const configText = readFileSync(configPath, "utf-8");
-  const tableLines = configText.split("\n").filter(l => l.trim().startsWith("|")).slice(2);
-  validBlogCategories = tableLines.map(line => {
-    const cells = line.split("|").map(c => c.trim()).filter(Boolean);
-    // Check if type is 'blog' (column index 3 in cells: name, hierarchy, section, type, icon, color)
-    if (cells && cells.length >= 4 && cells[3] === "blog") {
-      return cells[0].toLowerCase().replace(/\\/g, ""); // Return category name normalized
-    }
-    return null;
-  }).filter(Boolean);
-} catch (e) {
-  console.error("Failed to parse config for blog index", e);
-}
+const configItems = getConfigItems();
+const summaryItems = getSummaryItems();
+const entries = await getCollection("gitbook");
+const slugMap = buildSlugMap(entries);
 
-const entries = (await getCollection("gitbook")).filter((entry) => {
+const validBlogCategories = configItems
+  .filter(item => item.type === "blog")
+  .map(item => item.name.toLowerCase());
+
+const blogEntries = entries.filter((entry) => {
   if (!entry.id.includes("/")) return false;
-  // Extract category from entry path (e.g., 'productivity-hack/gmail-filter.md' => 'productivity-hack')
-  // We compare against the category name from config.
-  // The folder name might be 'productivity-hack' but config name 'Productivity Hack'.
-  // We should normalize both to compare.
   const folderName = entry.id.split("/")[0].toLowerCase().replace(/-/g, " "); 
-  
-  // Check if this folder maps to a valid blog category
-  // Simple check: does the folder name (normalized) match any valid blog category name (normalized)?
-  // Config: "Productivity Hack" -> normalized "productivity hack"
-  // Folder: "productivity-hack" -> normalized "productivity hack"
   return validBlogCategories.includes(folderName);
 });
 
-const getTitle = (entry) => {
-  if (entry.data?.title) {
-    return entry.data.title;
-  }
-
+const getTitle = (entry: any) => {
+  if (entry.data?.title) return entry.data.title;
   const match = entry.body?.match(/^#\s+(.+)$/m);
-  if (match) {
-    return match[1].trim();
-  }
-
+  if (match) return match[1].trim();
   return entry.id;
 };
 
-const parseSummary = (text) => {
-  const sections = [];
-  const lines = text.split(/\r?\n/);
-  let current = { title: null, items: [] };
+const summarySections: { title: string | null; items: any[] }[] = [];
+let currentSection: { title: string | null; items: any[] } = { title: null, items: [] };
 
-  const pushCurrent = () => {
-    if (current.title || current.items.length > 0) {
-      sections.push(current);
+summaryItems.forEach(item => {
+  if (item.section !== currentSection.title) {
+    if (currentSection.items.length > 0 || currentSection.title) {
+      summarySections.push(currentSection);
     }
-  };
-
-  for (const line of lines) {
-    const heading = line.match(/^##\s+(.+)/);
-    if (heading) {
-      pushCurrent();
-      current = { title: heading[1].trim(), items: [] };
-      continue;
-    }
-
-    const match = line.match(/^\s*\*\s+\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/);
-    if (!match) {
-      continue;
-    }
-
-    const title = match[1].trim();
-    const href = match[2].trim();
-    const titleAttr = match[3]?.trim();
-    const menuTitle = titleAttr || title;
-    const isExternal = /^https?:\/\//i.test(href);
-    if (isExternal) {
-      current.items.push({ href, title: menuTitle, external: true });
-      continue;
-    }
-
-    const slug = href.replace(/^\.\//, "").replace(/\.md$/i, "");
-    current.items.push({ slug, title: menuTitle, external: false });
+    currentSection = { title: item.section, items: [] };
   }
-
-  pushCurrent();
-  return sections;
-};
-
-const summaryPath = path.resolve(process.cwd(), "src/content/gitbook/SUMMARY.md");
-let summarySections = [];
-try {
-  const summaryText = readFileSync(summaryPath, "utf-8");
-  summarySections = parseSummary(summaryText);
-} catch {
-  summarySections = [];
-}
-
-const isContentPage = (id) => {
-  return !/^(README|SUMMARY)\.md$/i.test(id);
-};
-
-const buildSlugMap = (items) => {
-  const counts = new Map();
-  const map = new Map();
-
-  for (const entry of items) {
-    if (!isContentPage(entry.id)) {
-      continue;
-    }
-
-    const base = entry.id.replace(/\.md$/, "").split("/").pop();
-    const next = (counts.get(base) || 0) + 1;
-    counts.set(base, next);
-    const slug = next === 1 ? base : `${base}-${next}`;
-    map.set(entry.id.replace(/\.md$/, ""), slug);
-  }
-
-  return map;
-};
+  currentSection.items.push(item);
+});
+summarySections.push(currentSection);
 
 const entryMap = new Map(
   entries
-    .filter((entry) => isContentPage(entry.id))
+    .filter((entry) => !/^(README|SUMMARY)\.md$/i.test(entry.id))
     .map((entry) => [entry.id.replace(/\.md$/, ""), entry])
 );
-const slugMap = buildSlugMap(entries);
 
 const sections = summarySections
   .map((section) => {
     const items = section.items
       .map((item) => {
-        if (item.external) {
+        if (item.isExternal) {
           return {
             id: item.href,
-            title: item.title,
+            title: item.menuLabel,
             href: item.href,
             external: true,
           };
         }
 
         const entry = entryMap.get(item.slug);
-        if (!entry || entry.data?.hidden) {
-          return null;
-        }
+        if (!entry || entry.data?.hidden) return null;
 
         return {
           id: item.slug,
-          title: item.title || getTitle(entry),
+          title: item.menuLabel || getTitle(entry),
           href: `/${slugMap.get(entry.id.replace(/\.md$/, ""))}/`,
           external: false,
         };
@@ -162,8 +74,7 @@ const sections = summarySections
   })
   .filter((section) => section.items.length > 0);
 
-const fallbackItems = entries
-  .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
+const fallbackItems = blogEntries
   .map((entry) => ({
     id: slugMap.get(entry.id.replace(/\.md$/, "")),
     title: getTitle(entry),

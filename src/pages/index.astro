@@ -1,60 +1,31 @@
 ---
 import { getCollection } from "astro:content";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import SidebarLayout from "../layouts/SidebarLayout.astro";
+import { getSummaryItems } from "../utils/gitbook";
 
 const entries = await getCollection("gitbook");
-const summaryPath = path.resolve(process.cwd(), "src/content/gitbook/SUMMARY.md");
-
-const parseSummaryItems = (text) => {
-	const items = [];
-	const lines = text.split(/\r?\n/);
-
-	for (const line of lines) {
-		const match = line.match(/^\s*\*\s+\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/);
-		if (!match) {
-			continue;
-		}
-
-		const label = match[1].trim();
-		const href = match[2].trim();
-		const titleAttr = match[3]?.trim();
-		const menuLabel = titleAttr || label;
-		const isExternal = /^https?:\/\//i.test(href);
-		const slug = isExternal ? null : href.replace(/^\.\//, "").replace(/\.md$/i, "");
-
-		items.push({ label, menuLabel, href, titleAttr, isExternal, slug });
-	}
-
-	return items;
-};
+const summaryItems = getSummaryItems();
 
 let homeEntry = null;
 let homeTitle = "Home";
-try {
-	const summaryText = readFileSync(summaryPath, "utf-8");
-	const summaryItems = parseSummaryItems(summaryText);
-		const homeLink =
-			summaryItems.find(
-				(item) => item.titleAttr && item.titleAttr.toLowerCase() === "home" && !item.isExternal
-			) ||
-			summaryItems.find(
-				(item) =>
-					!item.isExternal &&
-					(item.label.toLowerCase() === "introduction" ||
-						item.titleAttr?.toLowerCase() === "introduction")
-			);
 
-	if (homeLink) {
-			homeTitle = homeLink.menuLabel || homeLink.label || homeTitle;
-		const match = entries.find((entry) => entry.id.replace(/\.md$/, "") === homeLink.slug);
-		if (match) {
-			homeEntry = match;
-		}
+const homeLink =
+	summaryItems.find(
+		(item) => item.titleAttr && item.titleAttr.toLowerCase() === "home" && !item.isExternal
+	) ||
+	summaryItems.find(
+		(item) =>
+			!item.isExternal &&
+			(item.label.toLowerCase() === "introduction" ||
+				item.titleAttr?.toLowerCase() === "introduction")
+	);
+
+if (homeLink) {
+	homeTitle = homeLink.menuLabel || homeLink.label || homeTitle;
+	const match = entries.find((entry) => entry.id.replace(/\.md$/, "") === homeLink.slug);
+	if (match) {
+		homeEntry = match;
 	}
-} catch {
-	homeEntry = null;
 }
 
 const homeContent = homeEntry ? await homeEntry.render() : null;

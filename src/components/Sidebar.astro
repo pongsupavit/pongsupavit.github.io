@@ -1,150 +1,42 @@
 ---
 import { getCollection } from "astro:content";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { sidebarSections, iconNames } from "../data/sidebar";
+import { 
+  getConfigItems, 
+  getSummaryItems, 
+  buildSlugMap 
+} from "../utils/gitbook";
+
 const { slug } = Astro.params;
 const currentPath = Astro.url.pathname;
 const entries = await getCollection("gitbook");
 
-const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
-const buildSlugMap = (items) => {
-  const counts = new Map();
-  const map = new Map();
-
-  for (const entry of items) {
-    if (!isContentPage(entry.id)) {
-      continue;
-    }
-
-    const base = entry.id.replace(/\.md$/, "").split("/").pop();
-    const next = (counts.get(base) || 0) + 1;
-    counts.set(base, next);
-    const slug = next === 1 ? base : `${base}-${next}`;
-    map.set(entry.id.replace(/\.md$/, ""), slug);
-  }
-
-  return map;
-};
-const toLabel = (slug) =>
-  slug
-    .split("-")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-
-
-const categories = entries
-  .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
-  .map((entry) => (entry.id.includes("/") ? entry.id.split("/")[0] : null))
-  .filter(Boolean);
-const entryMap = new Map(
-  entries
-    .filter((entry) => isContentPage(entry.id))
-    .map((entry) => [entry.id.replace(/\.md$/, ""), entry])
-);
+const isContentPage = (id: string) => !/^(README|SUMMARY)\.md$/i.test(id);
 const slugMap = buildSlugMap(entries);
 
-const parseSummaryItems = (text) => {
-  const items = [];
-  const lines = text.split(/\r?\n/);
-  let currentSection = null;
+const summaryItems = getSummaryItems();
+const configItems = getConfigItems();
 
-  for (const line of lines) {
-    const heading = line.match(/^##\s+(.+)/);
-    if (heading) {
-      currentSection = heading[1].trim();
-      continue;
-    }
-
-    const match = line.match(/^\s*\*\s+\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/);
-    if (!match) {
-      continue;
-    }
-
-    const label = match[1].trim();
-    const href = match[2].trim();
-    const titleAttr = match[3]?.trim();
-    const menuLabel = titleAttr || label;
-    const isExternal = /^https?:\/\//i.test(href);
-    const slug = isExternal ? null : href.replace(/^\.\//, "").replace(/\.md$/i, "");
-
-    items.push({ label, menuLabel, href, titleAttr, isExternal, slug, section: currentSection });
-  }
-
-  return items;
-};
-
-const summaryPath = path.resolve(process.cwd(), "src/content/gitbook/SUMMARY.md");
-let summaryItems = [];
-let homeLink = null;
-let templateItem = null;
-let appItem = null;
-let supportItems = [];
-try {
-  const summaryText = readFileSync(summaryPath, "utf-8");
-  summaryItems = parseSummaryItems(summaryText);
-  homeLink =
-    summaryItems.find(
-      (item) => item.titleAttr && item.titleAttr.toLowerCase() === "home" && !item.isExternal
-    ) ||
-    summaryItems.find(
-      (item) =>
-        !item.isExternal &&
-        (item.label.toLowerCase() === "introduction" ||
-          item.titleAttr?.toLowerCase() === "introduction")
-    );
-
-  templateItem = summaryItems.find(
-    (item) => item.section && item.section.toLowerCase() === "template" && !item.isExternal
-  );
-  appItem = summaryItems.find(
-    (item) => item.section && item.section.toLowerCase() === "app"
+const homeLink =
+  summaryItems.find(
+    (item) => item.titleAttr && item.titleAttr.toLowerCase() === "home" && !item.isExternal
+  ) ||
+  summaryItems.find(
+    (item) =>
+      !item.isExternal &&
+      (item.label.toLowerCase() === "introduction" ||
+        item.titleAttr?.toLowerCase() === "introduction")
   );
 
-  supportItems = summaryItems.filter(
-    (item) => item.section && item.section.toLowerCase() === "support"
-  );
-} catch {
-  summaryItems = [];
-  homeLink = null;
-  templateItem = null;
-  appItem = null;
-  supportItems = [];
-}
-
-// Parse unified config
-const configPath = path.resolve(process.cwd(), "src/content/gitbook/config/config.md");
-let configItems = [];
-try {
-  const configText = readFileSync(configPath, "utf-8");
-  // Extract table rows (simple regex for markdown table)
-  // Skip header lines (first two lines of the table)
-  const lines = configText.split("\n");
-  const tableLines = lines.filter(l => l.trim().startsWith("|"));
-  
-  configItems = tableLines
-    .slice(2) // skip header and separator
-    .map((line) => {
-      // Split and clean cell content (remove markdown escapes like \_)
-      const cells = line.split("|")
-        .map(c => c.trim())
-        .filter((c, i, a) => i > 0 && i < a.length - 1)
-        .map(c => c.replace(/\\/g, "")); // REMOVE ESCAPES
-
-      if (!cells || cells.length < 5) return null;
-      return {
-        name: cells[0],
-        hierarchy: parseInt(cells[1]) || 0,
-        section: cells[2],
-        type: cells[3],
-        icon: cells[4],
-        color: cells[5]
-      };
-    })
-    .filter(Boolean);
-} catch (e) {
-  console.error("Failed to parse unified config", e);
-}
+const templateItem = summaryItems.find(
+  (item) => item.section && item.section.toLowerCase() === "template" && !item.isExternal
+);
+const appItem = summaryItems.find(
+  (item) => item.section && item.section.toLowerCase() === "app"
+);
+const supportItems = summaryItems.filter(
+  (item) => item.section && item.section.toLowerCase() === "support"
+);
 
 // Create a map for quick title lookups from SUMMARY.md
 const summaryMap = new Map(
@@ -154,7 +46,7 @@ const summaryMap = new Map(
 );
 
 // Helper to get title from entry
-const getTitle = (entry) => {
+const getTitle = (entry: any) => {
   const slug = entry.id.replace(/\.md$/, "");
   
   // 1. Check SUMMARY.md first (GitBook standard)
@@ -173,7 +65,7 @@ const getTitle = (entry) => {
 };
 
 // Helper to get items for a category or section
-const getItemsForCategory = (categoryName) => {
+const getItemsForCategory = (categoryName: string) => {
     const searchName = categoryName.toLowerCase();
     
     // 1. Get items from SUMMARY.md that are under this section/heading

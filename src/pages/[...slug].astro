@@ -1,37 +1,18 @@
 ---
 import { getCollection } from "astro:content";
 import { readFileSync, statSync } from "node:fs";
-import path from "node:path";
 import SidebarLayout from "../layouts/SidebarLayout.astro";
-// Parse unified config
-const configPath = path.resolve(process.cwd(), "src/content/gitbook/config/config.md");
-let configItems = [];
-try {
-  const configText = readFileSync(configPath, "utf-8");
-  const tableLines = configText.split("\n").filter(l => l.trim().startsWith("|")).slice(2);
-  configItems = tableLines.map(line => {
-    const cells = line.split("|").map(c => c.trim()).filter(Boolean);
-    if (cells.length < 5) return null;
-    return {
-      name: cells[0].replace(/\\/g, ""),
-      hierarchy: parseInt(cells[1]) || 0,
-      section: cells[2],
-      type: cells[3],
-      icon: cells[4],
-      color: cells[5]?.replace(/\\/g, "")
-    };
-  }).filter(Boolean);
-} catch (e) {
-  console.error("Failed to parse unified config", e);
-}
+import { getConfigItems, getGitbookPath } from "../utils/gitbook";
 
-function getCategoryColor(category) {
+const configItems = getConfigItems();
+
+function getCategoryColor(category: string) {
   const searchName = category?.toLowerCase?.().replace(/-/g, " ");
   const found = configItems.find(c => c.name.toLowerCase() === searchName);
   return found?.color || "default";
 }
 
-function getCategoryName(category) {
+function getCategoryName(category: string) {
   const searchName = category?.toLowerCase?.().replace(/-/g, " ");
   const found = configItems.find(c => c.name.toLowerCase() === searchName);
   return found ? found.name : category.split("-").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
@@ -66,7 +47,7 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await entry.render();
 const headingMatch = entry.body?.match(/^#\s+(.+)$/m);
-const summaryPath = path.resolve(process.cwd(), "src/content/gitbook/SUMMARY.md");
+const summaryPath = getGitbookPath("SUMMARY.md");
 let summaryTitle = null;
 try {
   const summaryText = readFileSync(summaryPath, "utf-8");

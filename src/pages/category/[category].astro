@@ -1,16 +1,14 @@
 ---
 import { getCollection } from "astro:content";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import SidebarLayout from "../../layouts/SidebarLayout.astro";
+import { getSummaryItems, buildSlugMap } from "../../utils/gitbook";
 
 export async function getStaticPaths() {
   const entries = await getCollection("gitbook");
-  const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
   const categories = Array.from(
     new Set(
       entries
-        .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
+        .filter((entry) => !entry.data?.hidden && !/^(README|SUMMARY)\.md$/i.test(entry.id))
         .map((entry) => (entry.id.includes("/") ? entry.id.split("/")[0] : null))
         .filter(Boolean)
     )
@@ -22,111 +20,49 @@ export async function getStaticPaths() {
 }
 
 const entries = await getCollection("gitbook");
-const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
 const { category } = Astro.params;
+const slugMap = buildSlugMap(entries);
+const summaryItems = getSummaryItems();
 
-const getTitle = (entry) => {
-  if (entry.data?.title) {
-    return entry.data.title;
-  }
-
-  const match = entry.body?.match(/^#\s+(.+)$/m);
-  if (match) {
-    return match[1].trim();
-  }
-
-  return entry.id;
-};
-
-const toLabel = (slug) =>
+const toLabel = (slug: string) =>
   slug
     .split("-")
     .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
     .join(" ");
 
-const parseSummaryItems = (text) => {
-  const items = [];
-  const lines = text.split(/\r?\n/);
-
-  for (const line of lines) {
-    const match = line.match(/^\s*\*\s+\[([^\]]+)\]\(([^)\s]+)(?:\s+\"([^\"]+)\")?\)/);
-    if (!match) {
-      continue;
-    }
-
-    const label = match[1].trim();
-    const href = match[2].trim();
-    const titleAttr = match[3]?.trim();
-    const menuLabel = titleAttr || label;
-    if (/^https?:\/\//i.test(href)) {
-      continue;
-    }
-
-    const slug = href.replace(/^\.\//, "").replace(/\.md$/i, "");
-    items.push({ slug, title: menuLabel });
-  }
-
-  return items;
-};
-
-const buildSlugMap = (items) => {
-  const counts = new Map();
-  const map = new Map();
-
-  for (const entry of items) {
-    if (!isContentPage(entry.id)) {
-      continue;
-    }
-
-    const base = entry.id.replace(/\.md$/, "").split("/").pop();
-    const next = (counts.get(base) || 0) + 1;
-    counts.set(base, next);
-    const slug = next === 1 ? base : `${base}-${next}`;
-    map.set(entry.id.replace(/\.md$/, ""), slug);
-  }
-
-  return map;
+const getTitle = (entry: any) => {
+  if (entry.data?.title) return entry.data.title;
+  const match = entry.body?.match(/^#\s+(.+)$/m);
+  if (match) return match[1].trim();
+  return entry.id;
 };
 
 const entryMap = new Map(
   entries
-    .filter((entry) => isContentPage(entry.id))
+    .filter((entry) => !/^(README|SUMMARY)\.md$/i.test(entry.id))
     .map((entry) => [entry.id.replace(/\.md$/, ""), entry])
 );
 
-const slugMap = buildSlugMap(entries);
+let orderedItems = summaryItems
+  .filter((item) => !item.isExternal && item.slug?.startsWith(`${category}/`))
+  .map((item) => {
+    const entry = entryMap.get(item.slug!);
+    if (!entry || entry.data?.hidden) return null;
 
-const summaryPath = path.resolve(process.cwd(), "src/content/gitbook/SUMMARY.md");
-
-let orderedItems = [];
-try {
-  const summaryText = readFileSync(summaryPath, "utf-8");
-  const summaryItems = parseSummaryItems(summaryText);
-  orderedItems = summaryItems
-    .filter((item) => item.slug.startsWith(`${category}/`))
-    .map((item) => {
-      const entry = entryMap.get(item.slug);
-      if (!entry || entry.data?.hidden) {
-        return null;
-      }
-
-      return {
-        id: item.slug,
-        title: item.title || getTitle(entry),
-        href: `/${slugMap.get(entry.id.replace(/\.md$/, ""))}/`,
-      };
-    })
-    .filter(Boolean);
-} catch {
-  orderedItems = [];
-}
+    return {
+      id: item.slug,
+      title: item.menuLabel || getTitle(entry),
+      href: `/${slugMap.get(entry.id.replace(/\.md$/, ""))}/`,
+    };
+  })
+  .filter(Boolean);
 
 if (orderedItems.length === 0) {
   orderedItems = entries
     .filter(
       (entry) =>
         !entry.data?.hidden &&
-        isContentPage(entry.id) &&
+        !/^(README|SUMMARY)\.md$/i.test(entry.id) &&
         entry.id.startsWith(`${category}/`)
     )
     .map((entry) => ({
@@ -137,7 +73,7 @@ if (orderedItems.length === 0) {
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
-const pageTitle = toLabel(category);
+const pageTitle = toLabel(category!);
 ---
 
 <SidebarLayout title={pageTitle}>
