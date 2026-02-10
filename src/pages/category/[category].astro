@@ -1,7 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import path from "node:path";
 import SidebarLayout from "../../layouts/SidebarLayout.astro";
 
 export async function getStaticPaths() {
@@ -96,9 +96,7 @@ const entryMap = new Map(
 
 const slugMap = buildSlugMap(entries);
 
-const summaryPath = fileURLToPath(
-  new URL("../../content/gitbook/SUMMARY.md", import.meta.url)
-);
+const summaryPath = path.resolve(process.cwd(), "src/content/gitbook/SUMMARY.md");
 
 let orderedItems = [];
 try {

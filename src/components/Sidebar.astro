@@ -1,7 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { sidebarSections, iconNames } from "../data/sidebar";
 const { slug } = Astro.params;
 const currentPath = Astro.url.pathname;
@@ -74,7 +74,7 @@ const parseSummaryItems = (text) => {
   return items;
 };
 
-const summaryPath = fileURLToPath(new URL("../content/gitbook/SUMMARY.md", import.meta.url));
+const summaryPath = path.resolve(process.cwd(), "src/content/gitbook/SUMMARY.md");
 let summaryItems = [];
 let homeLink = null;
 let templateItem = null;
@@ -113,7 +113,7 @@ try {
 }
 
 // Parse unified config
-const configPath = fileURLToPath(new URL("../content/gitbook/config/config.md", import.meta.url));
+const configPath = path.resolve(process.cwd(), "src/content/gitbook/config/config.md");
 let configItems = [];
 try {
   const configText = readFileSync(configPath, "utf-8");

@@ -1,7 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import path from "node:path";
 import Sidebar from "../components/Sidebar.astro";
 import SearchModal from "../components/SearchModal.astro";
 
@@ -18,7 +18,7 @@ const entries = await getCollection("gitbook");
 // Parse config.md for category colors
 let categoryColors = {};
 try {
-  const configPath = fileURLToPath(new URL("../content/gitbook/config/config.md", import.meta.url));
+  const configPath = path.resolve(process.cwd(), "src/content/gitbook/config/config.md");
   const configText = readFileSync(configPath, "utf-8");
   const tableLines = configText.split("\n").filter(l => l.trim().startsWith("|")).slice(2);
   categoryColors = tableLines.reduce((acc, line) => {
