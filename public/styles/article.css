@@ -92,33 +92,70 @@ body.article-page .main {
 }
 
 .pill {
-  background: transparent;
-  color: var(--muted);
-  padding: 0;
+  padding: 4px 12px;
   font-weight: 500;
+  font-size: 0.8rem;
   text-decoration: none;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-  .pill-blue {
-    background: var(--category-blue-bg);
-    color: var(--category-blue-text);
-  }
-  .pill-green {
-    background: var(--category-green-bg);
-    color: var(--category-green-text);
-  }
-  .pill-red {
-    background: var(--category-red-bg);
-    color: var(--category-red-text);
-  }
-  .pill-purple {
-    background: var(--category-purple-bg);
-    color: var(--category-purple-text);
-  }
-  .pill-yellow {
-    background: var(--category-yellow-bg);
-    color: var(--category-yellow-text);
-  }
+.pill-default {
+  background: var(--category-default-bg);
+  color: var(--category-default-text);
+}
+
+.pill-gray {
+  background: var(--category-gray-bg);
+  color: var(--category-gray-text);
+}
+
+.pill-brown {
+  background: var(--category-brown-bg);
+  color: var(--category-brown-text);
+}
+
+.pill-orange {
+  background: var(--category-orange-bg);
+  color: var(--category-orange-text);
+}
+
+.pill-yellow {
+  background: var(--category-yellow-bg);
+  color: var(--category-yellow-text);
+}
+
+.pill-green {
+  background: var(--category-green-bg);
+  color: var(--category-green-text);
+}
+
+.pill-blue {
+  background: var(--category-blue-bg);
+  color: var(--category-blue-text);
+}
+
+.pill-purple {
+  background: var(--category-purple-bg);
+  color: var(--category-purple-text);
+}
+
+.pill-pink {
+  background: var(--category-pink-bg);
+  color: var(--category-pink-text);
+}
+
+.pill-red {
+  background: var(--category-red-bg);
+  color: var(--category-red-text);
+}
+
+.pill-grey {
+  background: var(--category-gray-bg);
+  color: var(--category-gray-text);
+}
 
 .pill:hover {
   color: var(--accent);
@@ -285,7 +322,7 @@ body.article-page .main {
   margin: 0.4rem 0;
 }
 
-.content :not(pre) > code {
+.content :not(pre)>code {
   font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
   font-size: 0.92em;

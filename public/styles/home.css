@@ -16,6 +16,8 @@
   --sidebar-hover: #e9e8e8;
   --sidebar-active: #f1f0ef;
   --sidebar-active-text: #2f3b55;
+  --sidebar-width: 280px;
+  /* Default sidebar width */
 }
 
 * {
@@ -31,7 +33,7 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: var(--sidebar-width) 1fr;
   min-height: 100vh;
 }
 
@@ -45,18 +47,29 @@ body {
   position: sticky;
   top: 0;
   height: 100vh;
+  width: var(--sidebar-width);
+  overflow: hidden;
+  /* Prevent content spill */
 }
 
 .collapse-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid var(--sidebar-border);
-  background: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
   display: grid;
   place-items: center;
   cursor: pointer;
   color: var(--sidebar-text);
+  margin-left: auto;
+  /* Push to right */
+  position: relative;
+  z-index: 50;
+}
+
+.collapse-btn:hover {
+  background: var(--sidebar-hover);
 }
 
 .collapse-btn svg {
@@ -77,6 +90,12 @@ body {
   align-items: center;
   gap: 12px;
   font-weight: 700;
+  padding-right: 4px;
+  position: relative;
+  z-index: 60;
+  /* Higher than collapse-btn (50) and resizer (10) */
+  min-width: 0;
+  /* Prevent flex overflow */
 }
 
 .brand__mark {
@@ -87,6 +106,7 @@ body {
   align-items: center;
   justify-content: center;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .brand__logo {
@@ -99,6 +119,9 @@ body {
 .brand__text {
   font-family: "Instrument Sans", "Noto Sans Thai", sans-serif;
   letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar__nav {
@@ -106,6 +129,9 @@ body {
   flex-direction: column;
   gap: 18px;
   font-size: 0.92rem;
+  overflow-y: auto;
+  /* Allow scroll if needed */
+  flex: 1;
 }
 
 .sidebar__title {
@@ -130,7 +156,7 @@ body {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 6px;
+  gap: 2px;
 }
 
 .section-toggle {
@@ -141,9 +167,9 @@ body {
   gap: 8px;
   background: transparent;
   border: none;
-  padding: 8px 10px;
-  min-height: 40px;
-  height: 40px;
+  padding: 6px 10px;
+  min-height: 32px;
+  height: 32px;
   border-radius: var(--radius-ui);
   cursor: pointer;
   line-height: 1;
@@ -176,106 +202,74 @@ body {
   display: none;
 }
 
-.sidebar__section a {
+.sidebar__section a,
+.sidebar__item a {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  min-height: 40px;
-  height: 40px;
+  padding: 6px 10px;
+  min-height: 32px;
+  height: 32px;
   border-radius: var(--radius-ui);
   text-decoration: none;
   color: var(--sidebar-text);
   font-weight: 500;
   transition: all 0.2s ease;
   line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.sidebar__section a .menu-icon {
+.sidebar__section a .menu-icon,
+.sidebar__item a .menu-icon {
   font-size: 18px;
   line-height: 1;
   display: inline-flex;
+  flex-shrink: 0;
 }
 
-.sidebar__section a.active {
+.sidebar__section a.active,
+.sidebar__item a.active {
   background: var(--sidebar-active);
   color: var(--sidebar-active-text);
 }
 
-.sidebar__section a:hover {
+.sidebar__section a:hover,
+.sidebar__item a:hover {
   background: var(--sidebar-hover);
   color: var(--sidebar-active-text);
 }
 
 body.sidebar-collapsed .layout {
-  grid-template-columns: 72px 1fr;
+  grid-template-columns: 64px 1fr !important;
+  /* Fixed collapsed width */
+}
+
+body.sidebar-collapsed .sidebar {
+  width: 64px !important;
+  padding: 24px 12px;
+  align-items: center;
 }
 
 body.sidebar-collapsed .sidebar__brand {
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  justify-content: center;
+  padding: 0;
+  width: 100%;
 }
 
 body.sidebar-collapsed .collapse-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
-}
-
-body.sidebar-collapsed .brand__mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  font-size: 0.85rem;
+  margin: 0;
+  background: var(--sidebar-hover);
+  /* Highlight button when collapsed */
 }
 
 body.sidebar-collapsed .brand__text,
 body.sidebar-collapsed .brand__mark,
-body.sidebar-collapsed .sidebar__title,
-body.sidebar-collapsed .sidebar__section a span {
+body.sidebar-collapsed .sidebar__nav,
+body.sidebar-collapsed .sidebar__footer,
+body.sidebar-collapsed #sidebar-resizer {
   display: none;
-}
-
-body.sidebar-collapsed .section-toggle {
-  justify-content: center;
-}
-
-body.sidebar-collapsed .section-toggle .chevron {
-  display: none;
-}
-
-body.sidebar-collapsed .sidebar {
-  padding: 16px 8px 12px;
-}
-
-body.sidebar-collapsed .sidebar__section a {
-  justify-content: center;
-  padding: 10px 0;
-  border-radius: var(--radius-ui);
-  background: transparent;
-}
-
-body.sidebar-collapsed .sidebar__section a .menu-icon {
-  width: 20px;
-  height: 20px;
-}
-
-body.sidebar-collapsed .sidebar__section a.active {
-  background: var(--sidebar-active);
-}
-
-body.sidebar-collapsed .sidebar__section a:hover {
-  background: var(--sidebar-hover);
-}
-
-body.sidebar-collapsed .sidebar__section ul {
-  gap: 10px;
-}
-
-body.sidebar-collapsed .sidebar__footer {
-  justify-content: center;
 }
 
 .sidebar__footer {
@@ -451,6 +445,7 @@ body.sidebar-collapsed .sidebar__footer {
   letter-spacing: 0.2em;
 }
 
+
 .logo-row {
   display: flex;
   justify-content: center;
@@ -459,6 +454,93 @@ body.sidebar-collapsed .sidebar__footer {
   color: #64748b;
   font-weight: 600;
   flex-wrap: wrap;
+}
+
+/* Submenu Styles */
+.submenu-toggle {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 6px 10px;
+  min-height: 32px;
+  height: 32px;
+  border-radius: var(--radius-ui);
+  text-decoration: none;
+  color: var(--sidebar-text);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  line-height: 1;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-family: inherit;
+}
+
+.submenu-toggle:hover {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-active-text);
+}
+
+.submenu-toggle .menu-data {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.submenu-toggle .menu-icon {
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+}
+
+.submenu-toggle .chevron-icon {
+  font-size: 16px;
+  color: var(--sidebar-title);
+  transition: transform 0.2s ease;
+}
+
+.submenu-wrapper.expanded .submenu-toggle .chevron-icon {
+  transform: rotate(90deg);
+}
+
+.submenu-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease-in-out;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+  margin-left: 19px;
+  /* Align with icon center approx */
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.submenu-wrapper.expanded .submenu-items {
+  max-height: 500px;
+  /* Arbitrary large height for transition */
+}
+
+/* Hide submenu details when sidebar is collapsed */
+body.sidebar-collapsed .submenu-toggle {
+  justify-content: center;
+}
+
+body.sidebar-collapsed .submenu-toggle .menu-data span:not(.menu-icon),
+body.sidebar-collapsed .submenu-toggle .chevron-icon {
+  display: none;
+}
+
+body.sidebar-collapsed .submenu-items {
+  display: none;
 }
 
 @media (max-width: 960px) {

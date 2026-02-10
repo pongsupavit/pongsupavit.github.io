@@ -1,0 +1,185 @@
+---
+const { items = [] } = Astro.props;
+---
+
+<div class="search-modal-overlay" id="search-modal-overlay">
+  <div class="search-modal" id="search-modal">
+    <header class="search-modal__header">
+      <span class="material-icons-outlined" aria-hidden="true">search</span>
+      <input 
+        type="text" 
+        class="search-modal__input" 
+        id="search-input" 
+        placeholder="Search posts and categories..."
+        autocomplete="off"
+      />
+      <button class="search-modal__close" id="search-close" aria-label="Close search">
+        <span class="material-icons-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    
+    <div class="search-modal__body" id="search-results">
+    </div>
+
+    <footer class="search-modal__footer">
+      <div class="search-modal__hint">
+        <kbd>↵</kbd> <span>to select</span>
+      </div>
+      <div class="search-modal__hint">
+        <kbd>↑</kbd><kbd>↓</kbd> <span>to navigate</span>
+      </div>
+      <div class="search-modal__hint">
+        <kbd>esc</kbd> <span>to close</span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<script is:inline define:vars={{ items }}>
+  const overlay = document.getElementById('search-modal-overlay');
+  const modal = document.getElementById('search-modal');
+  const input = document.getElementById('search-input');
+  const resultsContainer = document.getElementById('search-results');
+  const closeBtn = document.getElementById('search-close');
+
+  let selectedIndex = -1;
+  let matches = [];
+  let displayLimit = 10;
+
+  const openSearch = () => {
+    overlay.classList.add('open');
+    input.focus();
+    input.value = '';
+    displayLimit = 10;
+    renderResults([]);
+  };
+
+  const closeSearch = () => {
+    overlay.classList.remove('open');
+    selectedIndex = -1;
+  };
+
+  const renderResults = (results) => {
+    matches = results;
+    selectedIndex = -1;
+
+    if (!input.value.trim()) {
+      resultsContainer.innerHTML = '';
+      return;
+    }
+
+    if (results.length === 0) {
+      resultsContainer.innerHTML = '<div class="search-modal__empty">No results found for "' + input.value + '"</div>';
+      return;
+    }
+
+    const visibleResults = results.slice(0, displayLimit);
+
+    // Group by category
+    const grouped = visibleResults.reduce((acc, item) => {
+      const cat = item.category || 'Articles';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(item);
+      return acc;
+    }, {});
+
+    let html = '';
+    Object.keys(grouped).forEach(cat => {
+      html += `
+        <div class="search-modal__section">
+          <div class="search-modal__section-title">${cat}</div>
+          ${grouped[cat].map((item, idx) => `
+            <a href="${item.href}" class="search-result-item" data-index="${results.indexOf(item)}">
+              <div class="search-result-item__title">${item.title}</div>
+              ${item.excerpt ? `<div class="search-result-item__excerpt">${item.excerpt}</div>` : ''}
+              <div class="search-result-item__meta">
+                <span class="search-result-item__tag" style="background: var(--category-${item.color}-bg); color: var(--category-${item.color}-text)">${item.category}</span>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      `;
+    });
+
+    if (results.length > displayLimit) {
+      html += `
+        <div class="search-modal__more">
+          <button class="show-more-btn" id="show-more-btn">Show more results</button>
+        </div>
+      `;
+    }
+
+    resultsContainer.innerHTML = html;
+
+    const moreBtn = document.getElementById('show-more-btn');
+    if (moreBtn) {
+      moreBtn.onclick = () => {
+        displayLimit += 10;
+        renderResults(results);
+      };
+    }
+  };
+
+  const updateSelection = () => {
+    const items = resultsContainer.querySelectorAll('.search-result-item');
+    items.forEach((item, idx) => {
+      if (idx === selectedIndex) {
+        item.classList.add('selected');
+        item.scrollIntoView({ block: 'nearest' });
+      } else {
+        item.classList.remove('selected');
+      }
+    });
+  };
+
+  input.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (!query) {
+      renderResults([]);
+      return;
+    }
+
+    const filtered = items.filter(item => 
+      item.title.toLowerCase().includes(query) || 
+      (item.category && item.category.toLowerCase().includes(query)) ||
+      (item.body && item.body.toLowerCase().includes(query))
+    ).slice(0, 20);
+
+    renderResults(filtered);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIndex = Math.min(selectedIndex + 1, matches.length - 1);
+      updateSelection();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIndex = Math.max(selectedIndex - 1, 0);
+      updateSelection();
+    } else if (e.key === 'Enter') {
+      if (selectedIndex >= 0 && matches[selectedIndex]) {
+        window.location.href = matches[selectedIndex].href;
+      }
+    } else if (e.key === 'Escape') {
+      closeSearch();
+    }
+  });
+
+  // Global Key Listener
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      openSearch();
+    }
+  });
+
+  // Click Listeners
+  closeBtn.addEventListener('click', closeSearch);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeSearch();
+  });
+
+  // Exposure to window for sidebar trigger
+  window.triggerSearch = openSearch;
+</script>

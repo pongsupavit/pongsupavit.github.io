@@ -17,16 +17,26 @@
   --content-toc-active-text: #2f3b55;
 }
 
-  /* Category color variables */
-  :root {
-    --category-blue-bg: #e3ebf7;
-    --category-blue-text: #4a5a7a;
-    --category-green-bg: #d6e4da;
-    --category-green-text: #3a4a3f;
-    --category-red-bg: #f6e0e0;
-    --category-red-text: #a36a6a;
-    --category-purple-bg: #e3d6f6;
-    --category-purple-text: #6a4a7a;
-    --category-yellow-bg: #f6ecd7;
-    --category-yellow-text: #7a6a4f;
-  }
+/* Category color variables (Notion Style) */
+:root {
+  --category-default-bg: #f1f1ef;
+  --category-default-text: #37352f;
+  --category-gray-bg: #f1f1f0;
+  --category-gray-text: #787774;
+  --category-brown-bg: #f7f0e8;
+  --category-brown-text: #976d57;
+  --category-orange-bg: #fdf1e1;
+  --category-orange-text: #d9730d;
+  --category-yellow-bg: #f6ecd7;
+  --category-yellow-text: #7a6a4f;
+  --category-green-bg: #d6e4da;
+  --category-green-text: #3a4a3f;
+  --category-blue-bg: #e3ebf7;
+  --category-blue-text: #4a5a7a;
+  --category-purple-bg: #e3d6f6;
+  --category-purple-text: #6a4a7a;
+  --category-pink-bg: #fdecf2;
+  --category-pink-text: #ad1a72;
+  --category-red-bg: #f6e0e0;
+  --category-red-text: #a36a6a;
+}

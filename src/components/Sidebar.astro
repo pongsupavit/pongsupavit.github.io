@@ -3,8 +3,10 @@ import { getCollection } from "astro:content";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { sidebarSections, iconNames } from "../data/sidebar";
-
+const { slug } = Astro.params;
+const currentPath = Astro.url.pathname;
 const entries = await getCollection("gitbook");
+
 const isContentPage = (id) => !/^(README|SUMMARY)\.md$/i.test(id);
 const buildSlugMap = (items) => {
   const counts = new Map();
@@ -110,85 +112,189 @@ try {
   supportItems = [];
 }
 
-const blogSection = {
-  title: "Article",
-  items: [
-    { label: "All Articles", icon: "book", href: "/blog/" },
-    ...Array.from(new Set(categories))
-      .sort((a, b) => a.localeCompare(b))
-      .map((slug) => ({
-        label: toLabel(slug),
-        icon: iconNames[slug] ? slug : "grid",
-        href: `/category/${slug}/`,
-      })),
-  ],
-};
+// Parse unified config
+const configPath = fileURLToPath(new URL("../content/gitbook/config/config.md", import.meta.url));
+let configItems = [];
+try {
+  const configText = readFileSync(configPath, "utf-8");
+  // Extract table rows (simple regex for markdown table)
+  // Skip header lines (first two lines of the table)
+  const lines = configText.split("\n");
+  const tableLines = lines.filter(l => l.trim().startsWith("|"));
+  
+  configItems = tableLines
+    .slice(2) // skip header and separator
+    .map((line) => {
+      // Split and clean cell content (remove markdown escapes like \_)
+      const cells = line.split("|")
+        .map(c => c.trim())
+        .filter((c, i, a) => i > 0 && i < a.length - 1)
+        .map(c => c.replace(/\\/g, "")); // REMOVE ESCAPES
 
-const supportSection = {
-  title: "Support",
-  items: supportItems.map((item) => ({
-    label: item.menuLabel || item.label,
-    icon: "info",
-    href: item.isExternal ? item.href : `/${slugMap.get(item.slug)}/`,
-  })),
-};
+      if (!cells || cells.length < 5) return null;
+      return {
+        name: cells[0],
+        hierarchy: parseInt(cells[1]) || 0,
+        section: cells[2],
+        type: cells[3],
+        icon: cells[4],
+        color: cells[5]
+      };
+    })
+    .filter(Boolean);
+} catch (e) {
+  console.error("Failed to parse unified config", e);
+}
 
-const mainSection = sidebarSections.find((section) => section.title === "Main");
-const resourcesSection = sidebarSections.find((section) => section.title === "Resources");
-const orderedSections = [mainSection, blogSection, resourcesSection, supportSection].filter(
-  (section) => section && section.items && section.items.length > 0
+// Create a map for quick title lookups from SUMMARY.md
+const summaryMap = new Map(
+  summaryItems
+    .filter(item => item.slug)
+    .map(item => [item.slug, item])
 );
 
-const sections = orderedSections.map((section) => {
-  if (section.title === "Main") {
-    const items = section.items.map((item) => {
-      if (!item.isHome || !homeLink) {
-        return item;
-      }
+// Helper to get title from entry
+const getTitle = (entry) => {
+  const slug = entry.id.replace(/\.md$/, "");
+  
+  // 1. Check SUMMARY.md first (GitBook standard)
+  const summaryItem = summaryMap.get(slug);
+  if (summaryItem) return summaryItem.label;
 
-      return {
-        ...item,
-        label: homeLink.menuLabel || homeLink.label,
-        href: "/",
-      };
+  // 2. Check Frontmatter title
+  if (entry.data?.title) return entry.data.title;
+
+  // 3. Check first H1 heading in body
+  const match = entry.body?.match(/^#\s+(.+)$/m);
+  if (match) return match[1].trim();
+
+  // 4. Fallback to cleaned filename
+  return slug.split("/").pop().replace(/-/g, " ");
+};
+
+// Helper to get items for a category or section
+const getItemsForCategory = (categoryName) => {
+    const searchName = categoryName.toLowerCase();
+    
+    // 1. Get items from SUMMARY.md that are under this section/heading
+    const summaryMatching = summaryItems
+        .filter(item => item.section?.toLowerCase() === searchName)
+        .map(item => {
+            let href = item.href;
+            if (!item.isExternal && item.slug && slugMap.get(item.slug)) {
+                href = `/${slugMap.get(item.slug)}/`;
+            }
+            return {
+                label: item.menuLabel || item.label,
+                href: href
+            };
+        });
+
+    // 2. Get physical posts in the folder as fallback/supplement
+    const physicalPosts = entries
+        .filter((entry) => !entry.data?.hidden && isContentPage(entry.id))
+        .filter((entry) => {
+            if (!entry.id.includes("/")) return false;
+            const folder = entry.id.split("/")[0].toLowerCase().replace(/-/g, " ");
+            return folder === searchName;
+        })
+        .map((entry) => ({
+            label: getTitle(entry),
+            href: `/${slugMap.get(entry.id.replace(/\.md$/, ""))}/`
+        }));
+        
+    const allItems = [...summaryMatching];
+    physicalPosts.forEach(p => {
+        if (!allItems.find(item => item.href === p.href)) {
+            allItems.push(p);
+        }
     });
 
-    return { ...section, items };
-  }
+    return allItems.sort((a, b) => a.label.localeCompare(b.label, 'th'));
+};
 
-  if (section.title === "Resources") {
-    const items = section.items.map((item) => {
-      if (item.key === "template" && templateItem?.slug) {
-        return {
-          ...item,
-          label: templateItem.section || "Template",
-          href: `/${slugMap.get(templateItem.slug)}/`,
-        };
-      }
+// Build hierarchical structure based on config.md
+const buildSidebar = () => {
+    const sidebar = [];
+    const processedIndices = new Set();
+    
+    configItems.forEach((item, index) => {
+        if (processedIndices.has(index)) return;
 
-      if (item.key === "app" && appItem) {
-        return {
-          ...item,
-          label: appItem.section || "App",
-          href: appItem.isExternal ? appItem.href : `/${slugMap.get(appItem.slug)}/`,
-        };
-      }
+        if (item.hierarchy === 0) {
+            // Standalone button
+            const summaryItem = summaryItems.find(i => i.label.toLowerCase() === item.name.toLowerCase());
+            let href = "/";
+            if (summaryItem) {
+                href = summaryItem.isExternal ? summaryItem.href : `/${slugMap.get(summaryItem.slug)}/`;
+            } else if (item.name.toLowerCase() === "home") {
+                href = "/";
+            }
 
-      return item;
+            sidebar.push({
+                type: 'standalone',
+                label: item.name,
+                icon: item.icon,
+                href,
+                isActive: href.replace(/\/$/, "") === currentPath.replace(/\/$/, "")
+            });
+            processedIndices.add(index);
+        } else if (item.hierarchy === 1) {
+            // Section header
+            const children = configItems.filter(c => c.section === item.name && c.hierarchy === 2);
+            
+            sidebar.push({
+                type: 'section',
+                title: item.name,
+                icon: item.icon, // Section icon if we want to show it
+                items: children.map(child => {
+                    const posts = getItemsForCategory(child.name);
+                    
+                    if (posts.length > 0) {
+                        return {
+                            label: child.name,
+                            icon: child.icon,
+                            type: 'dropdown',
+                            isExpanded: posts.some(p => p.href.replace(/\/$/, "") === currentPath.replace(/\/$/, "")),
+                            items: posts.map(post => ({
+                                ...post,
+                                isActive: post.href.replace(/\/$/, "") === currentPath.replace(/\/$/, "")
+                            }))
+                        };
+                    }
+                    
+                    const summaryItem = summaryItems.find(i => i.label.toLowerCase() === child.name.toLowerCase());
+                    let href = "#";
+                    if (summaryItem) {
+                        href = summaryItem.isExternal ? summaryItem.href : `/${slugMap.get(summaryItem.slug)}/`;
+                    }
+                    
+                    return {
+                        label: child.name,
+                        icon: child.icon,
+                        href,
+                        isActive: href.replace(/\/$/, "") === currentPath.replace(/\/$/, "")
+                    };
+                })
+            });
+            processedIndices.add(index);
+            // Mark all children as processed so they don't appear at root
+            configItems.forEach((c, idx) => {
+                if (c.section === item.name && c.hierarchy === 2) processedIndices.add(idx);
+            });
+        }
     });
 
-    return { ...section, items };
-  }
+    return sidebar;
+};
 
-  return section;
-});
+const finalSections = buildSidebar();
+
+
 ---
 
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="sidebar__brand">
-    <button class="collapse-btn" id="sidebar-toggle" aria-label="Toggle sidebar">
-      <span class="material-icons-outlined" aria-hidden="true">menu</span>
-    </button>
     <span class="brand__mark" aria-hidden="true">
       <svg class="brand__logo" viewBox="0 0 100 100">
         <defs>
@@ -203,47 +309,146 @@ const sections = orderedSections.map((section) => {
       </svg>
     </span>
     <span class="brand__text"> PONGSUPAVIT</span>
+    <button class="collapse-btn" id="sidebar-toggle" aria-label="Toggle sidebar">
+      <span class="material-icons-outlined" aria-hidden="true">menu_open</span>
+    </button>
   </div>
 
   <nav class="sidebar__nav">
-    {sections.map((section) => (
-      <div class="sidebar__section">
-        <button class="section-toggle" type="button" aria-expanded="true">
-          <span class="sidebar__title">{section.title}</span>
-          <span class="material-icons-outlined chevron-icon" aria-hidden="true">expand_more</span>
-        </button>
-        <ul class="section-items">
-          {section.items.map((item) => (
-            <li>
-              <a href={item.href ?? "#"} class={item.isHome ? "active" : ""}>
-                <span class="material-icons-outlined menu-icon" aria-hidden="true">
-                  {iconNames[item.icon] ?? "help_outline"}
-                </span>
-                <span>{item.label}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
+    {finalSections.map((node) => (
+      node.type === 'standalone' ? (
+        node.label.toLowerCase() === 'search' ? (
+          <div class="sidebar__item">
+            <button class="search-btn" onclick="window.triggerSearch()">
+              <div class="search-btn__left">
+                <span class="material-icons-outlined search-btn__icon">search</span>
+                <span class="search-btn__placeholder">Search...</span>
+              </div>
+              <div class="search-btn__shortcut">
+                <span class="search-btn__key">⌘</span>
+                <span class="search-btn__key">K</span>
+              </div>
+            </button>
+          </div>
+        ) : (
+          <div class="sidebar__item">
+            <a href={node.href} class={`${node.isActive ? "active" : ""}`}>
+              <span class="material-icons-outlined menu-icon" aria-hidden="true">
+                {iconNames[node.icon] ?? node.icon ?? "help_outline"}
+              </span>
+              <span>{node.label}</span>
+            </a>
+          </div>
+        )
+      ) : (
+        <div class="sidebar__section">
+          <button class="section-toggle" type="button" aria-expanded="true">
+            <span class="sidebar__title">{node.title}</span>
+            <span class="material-icons-outlined chevron-icon" aria-hidden="true">expand_more</span>
+          </button>
+          <ul class="section-items">
+            {node.items.map((item) => (
+              <li>
+                {item.type === 'dropdown' ? (
+                    <div class={`submenu-wrapper ${item.isExpanded ? 'expanded' : ''}`}>
+                      <button class="submenu-toggle">
+                          <span class="material-icons-outlined chevron-icon" aria-hidden="true">chevron_right</span>
+                          <div class="menu-data">
+                              <span class="material-icons-outlined menu-icon" aria-hidden="true">
+                                  {iconNames[item.icon] ?? item.icon ?? "folder"}
+                              </span>
+                              <span>{item.label}</span>
+                          </div>
+                      </button>
+                      <ul class="submenu-items">
+                          {item.items.map(subItem => (
+                              <li>
+                                  <a href={subItem.href} class={`submenu-link ${subItem.isActive ? 'active' : ''}`}>
+                                      <span>{subItem.label}</span>
+                                  </a>
+                              </li>
+                          ))}
+                      </ul>
+                    </div>
+                ) : (
+                    <a href={item.href ?? "#"} class={`${item.isActive ? "active" : ""}`}>
+                      <span class="material-icons-outlined menu-icon" aria-hidden="true">
+                        {iconNames[item.icon] ?? item.icon ?? "help_outline"}
+                      </span>
+                      <span>{item.label}</span>
+                    </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
     ))}
   </nav>
+
     <div class="sidebar__footer">
       <button class="icon-btn" aria-label="Theme">
         <span class="material-icons-outlined" aria-hidden="true">dark_mode</span>
       </button>
     </div>
-
 </aside>
 
 <script>
-  document.querySelectorAll(".section-toggle").forEach((toggle) => {
-    toggle.addEventListener("click", () => {
-      const section = toggle.closest(".sidebar__section");
-      if (!section) {
-        return;
-      }
-      const isCollapsed = section.classList.toggle("collapsed");
-      toggle.setAttribute("aria-expanded", String(!isCollapsed));
-    });
-  });
+
+
+  // Function to initialize all sidebar interactions
+  const initSidebar = () => {
+    try {
+        // Main Sidebar Toggle
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        if (sidebarToggle) {
+            sidebarToggle.onclick = (e) => {
+              e.stopPropagation();
+              document.body.classList.toggle("sidebar-collapsed");
+              const isCollapsed = document.body.classList.contains("sidebar-collapsed");
+              const iconSpan = sidebarToggle.querySelector(".material-icons-outlined");
+              if (iconSpan) {
+                  iconSpan.textContent = isCollapsed ? "menu" : "menu_open";
+              }
+            };
+        }
+
+        // Section Toggle
+        document.querySelectorAll(".section-toggle").forEach((toggle) => {
+          toggle.onclick = (e) => {
+            e.stopPropagation();
+            const section = toggle.closest(".sidebar__section");
+            if (!section) return;
+            const isCollapsed = section.classList.toggle("collapsed");
+            toggle.setAttribute("aria-expanded", String(!isCollapsed));
+          };
+        });
+
+        // Submenu Toggle
+        document.querySelectorAll(".submenu-toggle").forEach((toggle) => {
+            toggle.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const wrapper = toggle.closest(".submenu-wrapper");
+                if (wrapper) {
+                  wrapper.classList.toggle("expanded");
+                }
+            };
+        });
+    } catch (err) {
+        // Silently fail or minimal log
+    }
+  };
+
+  // Run immediately if DOM is ready, otherwise wait
+  if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSidebar);
+  } else {
+      initSidebar();
+  }
+
+  // Re-run on View Transitions
+  document.addEventListener('astro:page-load', initSidebar);
+
+
 </script>

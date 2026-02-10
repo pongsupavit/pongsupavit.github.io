@@ -5,14 +5,40 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import SidebarLayout from "../../layouts/SidebarLayout.astro";
 
-const { blogCategories } = await import("../../content/blogCategories.ts");
+// Parse category config
+const categoryConfigPath = fileURLToPath(new URL("../../content/gitbook/config/category-config.md", import.meta.url));
+let validBlogCategories = [];
+try {
+  const configText = readFileSync(categoryConfigPath, "utf-8");
+  const rows = configText.match(/<tr>(.*?)<\/tr>/g) || [];
+  validBlogCategories = rows
+    .slice(1) // skip header
+    .map((row) => {
+      const cells = row.match(/<td>(.*?)<\/td>/g)?.map(c => c.replace(/<\/?td>/g, "").trim());
+      // Check if type is 'blog' (column index 1)
+      if (cells && cells.length >= 5 && cells[1] === "blog") {
+        return cells[0].toLowerCase(); // Return category name
+      }
+      return null;
+    })
+    .filter(Boolean);
+} catch (e) {
+  console.error("Failed to parse category config", e);
+}
 
 const entries = (await getCollection("gitbook")).filter((entry) => {
-  // Extract category from entry path (e.g., 'productivity-hack/gmail-filter.md' => 'Productivity Hack')
-  const categoryKey = entry.id.split("/")[0].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-  // Find matching category in blogCategories
-  const cat = blogCategories.find(c => c.name.toLowerCase() === categoryKey.toLowerCase());
-  return cat && cat.type === "blog";
+  if (!entry.id.includes("/")) return false;
+  // Extract category from entry path (e.g., 'productivity-hack/gmail-filter.md' => 'productivity-hack')
+  // We compare against the category name from config.
+  // The folder name might be 'productivity-hack' but config name 'Productivity Hack'.
+  // We should normalize both to compare.
+  const folderName = entry.id.split("/")[0].toLowerCase().replace(/-/g, " "); 
+  
+  // Check if this folder maps to a valid blog category
+  // Simple check: does the folder name (normalized) match any valid blog category name (normalized)?
+  // Config: "Productivity Hack" -> normalized "productivity hack"
+  // Folder: "productivity-hack" -> normalized "productivity hack"
+  return validBlogCategories.includes(folderName);
 });
 
 const getTitle = (entry) => {

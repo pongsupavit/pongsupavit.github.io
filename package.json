@@ -4,7 +4,9 @@
   "version": "0.0.1",
   "scripts": {
     "prepare:gitbook": "node scripts/prepare-gitbook.js",
+    "prepare-gitbook": "npm run prepare:gitbook",
     "update:gitbook": "node scripts/update-gitbook.js",
+    "update-gitbook": "npm run update:gitbook",
     "predev": "npm run prepare:gitbook",
     "dev": "astro dev",
     "prebuild": "npm run prepare:gitbook",
